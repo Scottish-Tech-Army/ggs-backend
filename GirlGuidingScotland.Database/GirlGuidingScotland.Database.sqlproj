@@ -62,14 +62,24 @@
     <Folder Include="dbo\Tables\" />
     <Folder Include="dbo\Stored Procedures\" />
     <Folder Include="PublishScripts" />
+    <Folder Include="PostDeploymentScripts" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="dbo\Tables\Person.sql" />
     <Build Include="dbo\Stored Procedures\Mock_GetPeople.sql" />
     <Build Include="dbo\Stored Procedures\Mock_CreatePerson.sql" />
     <Build Include="dbo\Stored Procedures\Mock_GetPerson.sql" />
+    <Build Include="dbo\Tables\Units.sql" />
+    <Build Include="dbo\Tables\Locations.sql" />
+    <Build Include="dbo\Tables\UnitLocations.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PublishScripts\GirlGuidingScotland.Database.publish.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <RefactorLog Include="GirlGuidingScotland.Database.refactorlog" />
+  </ItemGroup>
+  <ItemGroup>
+    <PostDeploy Include="PostDeploymentScripts\Script.PostDeployment.sql" />
   </ItemGroup>
 </Project>
