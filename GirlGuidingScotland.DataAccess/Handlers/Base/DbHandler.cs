@@ -46,11 +46,22 @@ namespace GirlGuidingScotland.DataAccess.Handlers.Base
 
             using (IDbConnection connection = new SqlConnection(ConnectionString))
             {
-                var response = await connection.QuerySingleAsync<T>(storedProcedure, (object)parameters, commandType: CommandType.StoredProcedure);
-                return new DbResponse<T>
+                try
                 {
-                    Value = response
-                };
+                    var response = await connection.QuerySingleAsync<T>(storedProcedure, (object) parameters,
+                        commandType: CommandType.StoredProcedure);
+                    return new DbResponse<T>
+                    {
+                        Value = response
+                    };
+                }
+                catch (Exception e)
+                {
+                    return new DbResponse<T>
+                    {
+                        Status = Status.Failed
+                    };
+                }
             }
         }
 

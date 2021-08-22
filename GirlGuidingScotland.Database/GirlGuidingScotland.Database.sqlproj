@@ -72,6 +72,10 @@
     <Build Include="dbo\Tables\Units.sql" />
     <Build Include="dbo\Tables\Locations.sql" />
     <Build Include="dbo\Tables\UnitLocations.sql" />
+    <Build Include="dbo\Stored Procedures\CreateLocation.sql" />
+    <Build Include="dbo\Stored Procedures\GetLocations.sql" />
+    <Build Include="dbo\Stored Procedures\GetLocation.sql" />
+    <Build Include="dbo\Stored Procedures\UpdateLocation.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PublishScripts\GirlGuidingScotland.Database.publish.xml" />

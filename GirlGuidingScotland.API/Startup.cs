@@ -35,6 +35,8 @@ namespace GirlGuidingScotland.API
 
             services.AddTransient<IMockService, MockService>();
             services.AddTransient<IMockHandler, MockHandler>();
+            services.AddTransient<ILocationService, LocationService>();
+            services.AddTransient<ILocationHandler, LocationHandler>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -58,6 +60,11 @@ namespace GirlGuidingScotland.API
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors(x => x.AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials()
+                .WithOrigins("http://localhost:3000"));
 
             app.UseAuthorization();
 
