@@ -29,8 +29,7 @@ namespace GirlGuidingScotland.API
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "GirlGuidingScotland.API", Version = "v1" });
-                c.IncludeXmlComments(XmlCommentsFilePath);
+                c.SwaggerDoc("v1", new OpenApiInfo {Title = "GirlGuidingScotland.API", Version = "v1"});
             });
 
             services.AddTransient<IMockService, MockService>();
