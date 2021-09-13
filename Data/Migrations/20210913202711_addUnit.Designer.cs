@@ -2,14 +2,16 @@
 using GGS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace GGS.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20210913202711_addUnit")]
+    partial class addUnit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,7 +67,7 @@ namespace GGS.Data.Migrations
 
             modelBuilder.Entity("GGS.Entities.Unit", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -75,7 +77,7 @@ namespace GGS.Data.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("Id");
+                    b.HasKey("ID");
 
                     b.ToTable("Units");
                 });
@@ -85,12 +87,12 @@ namespace GGS.Data.Migrations
                     b.Property<int>("LocationsId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("UnitsId")
+                    b.Property<int>("UnitsID")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("LocationsId", "UnitsId");
+                    b.HasKey("LocationsId", "UnitsID");
 
-                    b.HasIndex("UnitsId");
+                    b.HasIndex("UnitsID");
 
                     b.ToTable("LocationUnit");
                 });
@@ -116,7 +118,7 @@ namespace GGS.Data.Migrations
 
                     b.HasOne("GGS.Entities.Unit", null)
                         .WithMany()
-                        .HasForeignKey("UnitsId")
+                        .HasForeignKey("UnitsID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

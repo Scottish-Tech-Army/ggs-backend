@@ -14,5 +14,6 @@ namespace GGS.Data
         }
 
         public DbSet<Location> Locations { get; set; }
+        public DbSet<Unit> Units { get; set; }
     }
 }

@@ -13,5 +13,7 @@ namespace GGS.Entities
         public float Latitude { get; set; }
         public float Longitude { get; set; }
         public ICollection<LocationPhoto> Photos { get; set; }
+
+        public virtual ICollection<Unit> Units { get; set; }
     }
 }
