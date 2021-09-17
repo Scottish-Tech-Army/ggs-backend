@@ -20,9 +20,11 @@ namespace GGS.Controllers
     {
         private readonly DataContext _context;
         private readonly IMapper _mapper;
-        public UnitController(DataContext context, IMapper mapper)
+        private readonly ITokenService _tokenService;
+        public UnitController(DataContext context, IMapper mapper, ITokenService tokenService)
         {
             _mapper = mapper;
+            _tokenService = tokenService;
             _context = context;
         }
         // GET: api/<UnitController>
@@ -49,16 +51,26 @@ namespace GGS.Controllers
             return unit;
         }
 
-        // POST api/<UnitController>
+        [Route("collect")]
         [HttpPost]
-        public async Task<ActionResult<UnitDto>> CreateUnit([FromBody] UnitDto unitDto)
+        public async Task<ActionResult<UnitDto>> CollectLocation(int unitId, int locationId)
         {
-            var unit = new Unit()
+            var unit = await _context.Units
+                .Include(u => u.Locations)
+                .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync(x => x.Id == unitId);
+            if (unit == null)
             {
-                Name = unitDto.Name,
-                Code = unitDto.Code
-            };
-            _context.Units.Add(unit);
+                return NotFound(unitId);
+            }
+
+            var location = await _context.Locations
+                .ProjectTo<LocationDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync(x => x.Id == locationId);
+            if (location == null)
+            {
+                return NotFound(locationId);
+            }
 
             if (await _context.SaveChangesAsync() > 0)
             {
@@ -67,45 +79,5 @@ namespace GGS.Controllers
 
             return BadRequest("Error adding new unit");
         }
-
-        // PUT api/<UnitController>/5
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUnit([FromForm] Unit unit)
-        {
-            var dbUnit = await _context.Units.FindAsync(unit.Id);
-            if (dbUnit == null)
-            {
-                return NotFound();
-            }
-
-            _mapper.Map(unit, dbUnit);
-
-            _context.Units.Update(dbUnit);
-
-            if (await _context.SaveChangesAsync() > 0)
-            {
-                return NoContent();
-            }
-
-            return BadRequest("Failed to update Unit");
-        }
-
-        // DELETE api/<UnitController>/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteUnit(int id)
-        {
-            var unit = await _context.Units.FindAsync(id);
-            if (unit == null)
-            {
-                return NotFound();
-            }
-
-            _context.Units.Remove(unit);
-            if (await _context.SaveChangesAsync() > 0) return Ok();
-
-            return BadRequest("Failed to Delete Unit");
-        }
-
-       
     }
 }

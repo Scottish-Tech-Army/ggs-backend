@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GGS.Data;
+using GGS.Extensions;
 using GGS.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,10 +30,8 @@ namespace GGS
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddAutoMapper(typeof(AutoMapperProfiles).Assembly);
-            services.AddDbContext<DataContext>(options =>
-            {
-                options.UseSqlite(_config.GetConnectionString("DefaultConnection"));
-            });
+            services.AddApplicationServices(_config);
+            services.AddIdentityServices(_config);
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -53,6 +52,13 @@ namespace GGS
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors(x => x.AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials()
+                .WithOrigins("http://localhost:3000"));
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 
