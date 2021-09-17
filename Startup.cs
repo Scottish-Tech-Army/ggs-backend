@@ -54,6 +54,11 @@ namespace GGS
 
             app.UseRouting();
 
+            app.UseCors(x => x.AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials()
+                .WithOrigins("http://localhost:3000"));
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
