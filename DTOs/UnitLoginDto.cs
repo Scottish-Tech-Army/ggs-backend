@@ -5,10 +5,8 @@ using System.Threading.Tasks;
 
 namespace GGS.DTOs
 {
-    public class UnitDto
+    public class UnitLoginDto
     {
-        public int Id { get; set; }
         public string Code { get; set; }
-        public virtual LocationDto Locations { get; set; }
     }
 }

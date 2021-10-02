@@ -2,12 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using GGS.Data;
 using GGS.DTOs;
 using GGS.Entities;
+using GGS.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -27,29 +30,25 @@ namespace GGS.Controllers
             _tokenService = tokenService;
             _context = context;
         }
-        // GET: api/<UnitController>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<UnitDto>>> GetUnits()
-        {
-            return await _context.Units
-                .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
-                .ToListAsync();
-        }
 
-        // GET api/<UnitController>/5
-        [HttpGet("{id}", Name = "GetUnit")]
-        public async Task<ActionResult<UnitDto>> GetUnit(int id)
+        [HttpPost("login")]
+        public async Task<ActionResult<UnitTokenDto>> Login(UnitLoginDto unitLoginDto)
         {
             var unit = await _context.Units
+                .Where(x => x.Code == unitLoginDto.Code)
                 .Include(u => u.Locations)
                 .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
-                .SingleOrDefaultAsync(x => x.Id == id);
-            if (unit == null)
+                .SingleOrDefaultAsync();
+
+            if (unit == null) return Unauthorized("Invalid code");
+
+            return new UnitTokenDto
             {
-                return NotFound(id);
-            }
-            return unit;
+                Token = _tokenService.CreateToken(unit),
+                Locations = unit.Locations
+            };
         }
+        
 
         [Route("collect")]
         [HttpPost]

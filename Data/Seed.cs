@@ -24,6 +24,16 @@ namespace GGS.Data
                 await context.Locations.AddAsync(location);
             }
 
+            if (await context.Units.AnyAsync()) return;
+
+            var unitData = await System.IO.File.ReadAllTextAsync("Data/UnitSeedData.json");
+            var units = JsonSerializer.Deserialize<List<Unit>>(unitData);
+            if (units == null) return;
+            foreach (var unit in units)
+            {
+                await context.Units.AddAsync(unit);
+            }
+
             await context.SaveChangesAsync();
         }
     }

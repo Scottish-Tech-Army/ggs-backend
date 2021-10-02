@@ -4,14 +4,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using GGS.Data;
 using GGS.DTOs;
 using GGS.Entities;
+using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace GGS.Controllers
 {
+    [Route("api/[controller]")]
     [ApiController]
     public class AdminController : ControllerBase
     {
@@ -23,7 +26,7 @@ namespace GGS.Controllers
             _context = context;
         }
 
-        [Route("api/Location")]
+        [Route("Location")]
         [HttpPost]
         public async Task<ActionResult<LocationDto>> CreateLocation([FromBody] LocationDto locationDto)
         {
@@ -44,7 +47,7 @@ namespace GGS.Controllers
             return BadRequest("Error adding new location");
         }
 
-        [Route("api/Location")]
+        [Route("Location")]
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateLocation([FromForm] Location location)
         {
@@ -66,7 +69,7 @@ namespace GGS.Controllers
             return BadRequest("Failed to update location");
         }
 
-        [Route("api/Location")]
+        [Route("Location")]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteLocation(int id)
         {
@@ -82,14 +85,37 @@ namespace GGS.Controllers
             return BadRequest("Failed to Delete location");
         }
 
+        // GET: api/<UnitController>
+        [Route("Units")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<UnitDto>>> GetUnits()
+        {
+            return await _context.Units
+                .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
 
-        [Route("api/Unit")]
+        // GET api/<UnitController>/5
+        [Route("Unit")]
+        [HttpGet("{id}", Name = "GetUnit")]
+        public async Task<ActionResult<UnitDto>> GetUnit(int id)
+        {
+            var unit = await _context.Units
+                .Include(u => u.Locations)
+                .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync(x => x.Id == id);
+            if (unit == null)
+            {
+                return NotFound(id);
+            }
+            return unit;
+        }
+        [Route("Unit")]
         [HttpPost]
         public async Task<ActionResult<UnitDto>> CreateUnit([FromBody] UnitDto unitDto)
         {
             var unit = new Unit()
             {
-                Name = unitDto.Name,
                 Code = unitDto.Code
             };
             _context.Units.Add(unit);
@@ -102,7 +128,7 @@ namespace GGS.Controllers
             return BadRequest("Error adding new unit");
         }
 
-        [Route("api/Unit")]
+        [Route("Unit")]
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateUnit([FromForm] Unit unit)
         {
@@ -124,7 +150,7 @@ namespace GGS.Controllers
             return BadRequest("Failed to update Unit");
         }
 
-        [Route("api/Unit")]
+        [Route("Unit")]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteUnit(int id)
         {

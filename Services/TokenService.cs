@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using GGS.DTOs;
+using GGS.Entities;
 using GGS.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -32,8 +33,8 @@ namespace GGS.Services
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
+                
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.AddDays(7),
                 SigningCredentials = creds
             };
 

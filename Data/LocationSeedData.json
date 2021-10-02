@@ -1,16 +1,38 @@
 [
   {
     "Name": "Edinburgh Airport",
-    "Description":
-      "Edinburgh Airport is an airport located in the Ingliston area of Edinburgh, Scotland. It was the busiest airport in Scotland in 2019, handling over 14.7 million passengers. It was also the sixth-busiest airport in the United Kingdom by total passengers in 2019.",
+    "Description": "Edinburgh Airport is an airport located in the Ingliston area of Edinburgh, Scotland. It was the busiest airport in Scotland in 2019, handling over 14.7 million passengers. It was also the sixth-busiest airport in the United Kingdom by total passengers in 2019.",
     "Latitude": 55.949996,
     "Longitude": -3.370165,
     "Photos": [
       {
-        "Url":
-          "https://www.scotsman.com/images-e.jpimedia.uk/imagefetch/http://www.scotsman.com/webimage/Prestige.Item.1.75548113!image/image.jpg?crop=982:524,smart&width=990",
+        "Url": "https://www.scotsman.com/images-e.jpimedia.uk/imagefetch/http://www.scotsman.com/webimage/Prestige.Item.1.75548113!image/image.jpg?crop=982:524,smart&width=990",
         "IsMain": true
       }
+    ]
+  },
+  {
+    "Name": "Grey Friars Bobby Statue",
+    "Description": "",
+    "Latitude": 55.946874,
+    "Longitude": -3.191229,
+    "Photos": [
+    ]
+  },
+  {
+    "Name": "Edinburgh Castle Entrance",
+    "Description": "",
+    "Latitude": 55.9484,
+    "Longitude": -3.196334,
+    "Photos": [
+    ]
+  },
+  {
+    "Name": "Arthurs Seat Footpath",
+    "Description": "",
+    "Latitude": 55.942384,
+    "Longitude": -3.19736,
+    "Photos": [
     ]
   }
 ]
