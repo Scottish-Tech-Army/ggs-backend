@@ -15,5 +15,14 @@ namespace GGS.Data
 
         public DbSet<Location> Locations { get; set; }
         public DbSet<Unit> Units { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<LocationUnit>()
+                .HasKey(lu => new {lu.LocationId, lu.UnitId});
+
+        }
     }
 }

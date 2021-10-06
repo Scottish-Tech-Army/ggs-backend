@@ -11,6 +11,7 @@ using GGS.Data;
 using GGS.DTOs;
 using GGS.Entities;
 using GGS.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -31,6 +32,7 @@ namespace GGS.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<ActionResult<UnitTokenDto>> Login(UnitLoginDto unitLoginDto)
         {
@@ -48,15 +50,14 @@ namespace GGS.Controllers
                 Locations = unit.Locations
             };
         }
-        
 
+        [Authorize]
         [Route("collect")]
         [HttpPost]
         public async Task<ActionResult<UnitDto>> CollectLocation(int unitId, int locationId)
         {
             var unit = await _context.Units
                 .Include(u => u.Locations)
-                .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
                 .SingleOrDefaultAsync(x => x.Id == unitId);
             if (unit == null)
             {
@@ -71,6 +72,21 @@ namespace GGS.Controllers
                 return NotFound(locationId);
             }
 
+            var locationCheck = unit.Locations.FirstOrDefault(l => l.LocationId == locationId);
+            if (locationCheck != null)
+            {
+                return BadRequest("location has already been collected");
+            }
+            unit.Locations = new List<LocationUnit>
+            {
+                new LocationUnit()
+                {
+                    LocationId = locationId,
+                    UnitId = unitId
+                }
+            };
+
+            _context.Units.Update(unit);
             if (await _context.SaveChangesAsync() > 0)
             {
                 return CreatedAtRoute("GetUnit", new { id = unit.Id }, _mapper.Map<UnitDto>(unit));

@@ -9,6 +9,6 @@ namespace GGS.Entities
     {
         public int Id { get; set; }
         public string Code { get; set; }
-        public virtual ICollection<Location> Locations { get; set; }
+        public virtual ICollection<LocationUnit> Locations { get; set; }
     }
 }
