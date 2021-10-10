@@ -26,7 +26,7 @@ namespace GGS.Services
         {
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.NameId, unitDto.Code)
+                new Claim(JwtRegisteredClaimNames.UniqueName, unitDto.Code)
             };
 
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
@@ -35,6 +35,7 @@ namespace GGS.Services
             {
                 
                 Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.Now.AddDays(7),
                 SigningCredentials = creds
             };
 

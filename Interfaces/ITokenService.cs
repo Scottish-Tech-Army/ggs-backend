@@ -10,5 +10,5 @@ namespace GGS.Interfaces
     public interface ITokenService
     {
         string CreateToken(UnitDto unitDto);
-        }
+    }
 }

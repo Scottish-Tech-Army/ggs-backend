@@ -47,13 +47,13 @@ namespace GGS.Controllers
                 .Include(p => p.Photos)
                 .ProjectTo<LocationDto>(_mapper.ConfigurationProvider)
                 .SingleOrDefaultAsync(x => x.Id == id);
-           if (location == null)
+           
+            if (location == null)
             {
                 return NotFound(id);
-            }
+            } 
+           
            return location;
         }
-
-       
     }
 }

@@ -8,12 +8,14 @@ using AutoMapper.QueryableExtensions;
 using GGS.Data;
 using GGS.DTOs;
 using GGS.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace GGS.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AdminController : ControllerBase
@@ -91,6 +93,8 @@ namespace GGS.Controllers
         public async Task<ActionResult<IEnumerable<UnitDto>>> GetUnits()
         {
             return await _context.Units
+                .Include(o => o.Locations)
+                .ThenInclude(u => u.Location)
                 .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
@@ -101,7 +105,8 @@ namespace GGS.Controllers
         public async Task<ActionResult<UnitDto>> GetUnit(int id)
         {
             var unit = await _context.Units
-                .Include(u => u.Locations)
+                .Include(o => o.Locations)
+                .ThenInclude(u => u.Location)
                 .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
                 .SingleOrDefaultAsync(x => x.Id == id);
             if (unit == null)

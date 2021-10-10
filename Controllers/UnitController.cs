@@ -10,6 +10,7 @@ using AutoMapper.QueryableExtensions;
 using GGS.Data;
 using GGS.DTOs;
 using GGS.Entities;
+using GGS.Extensions;
 using GGS.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,8 @@ namespace GGS.Controllers
         {
             var unit = await _context.Units
                 .Where(x => x.Code == unitLoginDto.Code)
-                .Include(u => u.Locations)
+                .Include(o => o.Locations)
+                .ThenInclude(u => u.Location)
                 .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
                 .SingleOrDefaultAsync();
 
@@ -54,37 +56,34 @@ namespace GGS.Controllers
         [Authorize]
         [Route("collect")]
         [HttpPost]
-        public async Task<ActionResult<UnitDto>> CollectLocation(int unitId, int locationId)
+        public async Task<ActionResult<UnitDto>> CollectLocation(CollectionDto collectionDto)
         {
+            var code = User.GetCode();
             var unit = await _context.Units
-                .Include(u => u.Locations)
-                .SingleOrDefaultAsync(x => x.Id == unitId);
-            if (unit == null)
-            {
-                return NotFound(unitId);
-            }
+                .Include(o => o.Locations)
+                .ThenInclude(u => u.Location)
+                .SingleOrDefaultAsync(x => x.Code == code);
 
             var location = await _context.Locations
-                .ProjectTo<LocationDto>(_mapper.ConfigurationProvider)
-                .SingleOrDefaultAsync(x => x.Id == locationId);
+                .SingleOrDefaultAsync(x => x.Id == collectionDto.Id);
             if (location == null)
             {
-                return NotFound(locationId);
+                return NotFound("Location not found");
             }
 
-            var locationCheck = unit.Locations.FirstOrDefault(l => l.LocationId == locationId);
+            var locationCheck = unit.Locations.FirstOrDefault(l => l.LocationId == collectionDto.Id);
             if (locationCheck != null)
             {
                 return BadRequest("location has already been collected");
             }
-            unit.Locations = new List<LocationUnit>
+
+            var locationUnit = new LocationUnit()
             {
-                new LocationUnit()
-                {
-                    LocationId = locationId,
-                    UnitId = unitId
-                }
+                Location = location,
+                Unit = unit,
             };
+            _context.LocationUnits.Add(locationUnit);
+            unit.Locations.Add(locationUnit);
 
             _context.Units.Update(unit);
             if (await _context.SaveChangesAsync() > 0)

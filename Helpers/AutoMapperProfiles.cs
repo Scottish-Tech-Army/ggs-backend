@@ -16,7 +16,7 @@ namespace GGS.Helpers
             CreateMap<LocationPhoto, LocationPhotoDto>();
             CreateMap<Unit, UnitDto>();
             CreateMap<UnitLoginDto, UnitDto>();
-            CreateMap<LocationUnit, LocationDto>();
+            CreateMap<LocationUnit, LocationUnitDto>();
         }
     }
 }

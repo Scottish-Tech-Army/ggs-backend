@@ -20,19 +20,111 @@
     ]
   },
   {
-    "Name": "Edinburgh Castle Entrance",
-    "Description": "",
-    "Latitude": 55.9484,
-    "Longitude": -3.196334,
+    "Name": "Grassmarket",
+    "Description": "The Grassmarket was the site of a weekly market for cattle, horses and sheep, and many public executions.",
+    "Latitude": 55.947520,
+    "Longitude": -3.196300,
     "Photos": [
+      {
+        "Url": "https://en.wikipedia.org/wiki/Grassmarket#/media/File:East_end_of_the_Grassmarket,_Edinburgh_(composite).jpg",
+        "IsMain": true
+      }
     ]
   },
   {
-    "Name": "Arthurs Seat Footpath",
-    "Description": "",
-    "Latitude": 55.942384,
-    "Longitude": -3.19736,
+    "Name": "Forth Bridge",
+    "Description": "A wonder of the Victorian engineering world, this extraordinary steel bridge was built between 1882 and 1890. Almost 2 miles long, it expands by a metre between winter and summer.",
+    "Latitude": 55.986452,
+    "Longitude": -3.381797,
     "Photos": [
+      {
+        "Url": "https://en.wikipedia.org/wiki/Forth_Bridge#/media/File:Scotland-2016-Aerial-Edinburgh-Forth_Bridge.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Burns Monument",
+    "Description": "More than a monument, this small temple was erected in 1831 in memory of Robert Burns 1759 -1792, Scotlands national poet.",
+    "Latitude": 55.9534892,
+    "Longitude": -3.1805205,
+    "Photos": [
+      {
+        "Url": "https://en.wikipedia.org/wiki/List_of_Robert_Burns_memorials#/media/File:Burns_Monument,_Calton_Hill,_Edinburgh.JPG",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "David Hume Statue",
+    "Description": "This statue commemorates the Scottish philosopher, David Hume 1711-1776.",
+    "Latitude": 55.9495405,
+    "Longitude": -3.194603,
+    "Photos": [
+      {
+        "Url": "https://en.wikipedia.org/wiki/David_Hume#/media/File:DavidHume.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Old College",
+    "Description": "The birthplace of the University of Edinburgh, the Old College was constructed between 1789 and 1827.",
+    "Latitude": 55.9472097,
+    "Longitude": -3.1892527,
+    "Photos": [
+      {
+        "Url": "https://en.wikipedia.org/wiki/Old_College,_University_of_Edinburgh#/media/File:Old_College,_University_of_Edinburgh_(24923171570).jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Edinburgh Castle",
+    "Description": "An 11th-century castle and barracks housing the Crown Jewels and National War Museum of Scotland.",
+    "Latitude": 55.9485946,
+    "Longitude": -3.2007574,
+    "Photos": [
+      {
+        "Url": "https://en.wikipedia.org/wiki/Edinburgh_Castle#/media/File:Edinburgh_Castle_from_the_North.JPG",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "King George IV Statue",
+    "Description": "Erected in 1831 this statue commemorates the king's visit to Edinburgh in 1822, the first visit by a Hanoverian monarch to Scotland.",
+    "Latitude": 55.9535255,
+    "Longitude": -3.1994563,
+    "Photos": [
+      {
+        "Url": "https://commons.wikimedia.org/wiki/File:George_IV_Statue_(Edinburgh)_-_01.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Scottish Parliament Building, Holyrood",
+    "Description": "Home of the Scottish Parliament at Holyrood, within the UNESCO World Heritage Site in central Edinburgh.",
+    "Latitude": 55.9509277,
+    "Longitude": -3.1798564,
+    "Photos": [
+      {
+        "Url": "https://en.wikipedia.org/wiki/Scottish_Parliament_Building#/media/File:The_Scottish_Parliament_-_geograph.org.uk_-_925016.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Arthur's Seat",
+    "Description": "An ancient volcano which is the main peak of the group of hills in Edinburgh, Scotland, which form most of Holyrood Park, described by Robert Louis Stevenson as 'a hill for magnitude, a mountain in virtue of its bold design'.",
+    "Latitude": 55.9474659,
+    "Longitude": -3.1777573,
+    "Photos": [
+      {
+        "Url": "https://en.wikipedia.org/wiki/Arthur%27s_Seat#/media/File:Arthur's_Seat,_Edinburgh.JPG",
+        "IsMain": true
+      }
     ]
   }
 ]

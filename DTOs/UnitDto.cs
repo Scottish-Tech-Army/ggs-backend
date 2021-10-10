@@ -10,6 +10,6 @@ namespace GGS.DTOs
     {
         public int Id { get; set; }
         public string Code { get; set; }
-        public virtual ICollection<LocationDto> Locations { get; set; }
+        public virtual ICollection<LocationUnitDto> Locations { get; set; }
     }
 }
