@@ -87,7 +87,7 @@ namespace GGS.Controllers
             _context.Units.Update(unit);
             if (await _context.SaveChangesAsync() > 0)
             {
-                return CreatedAtRoute("GetLocation", new { id = location.Id }, _mapper.Map<LocationDto>(unit));
+                return Ok();
             }
 
             return BadRequest("Error adding new unit");
