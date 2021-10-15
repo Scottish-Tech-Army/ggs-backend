@@ -49,7 +49,6 @@ namespace GGS.Controllers
             return new UnitTokenDto
             {
                 Token = _tokenService.CreateToken(unit),
-                Locations = unit.Locations
             };
         }
 
@@ -88,7 +87,7 @@ namespace GGS.Controllers
             _context.Units.Update(unit);
             if (await _context.SaveChangesAsync() > 0)
             {
-                return CreatedAtRoute("GetUnit", new { id = unit.Id }, _mapper.Map<UnitDto>(unit));
+                return CreatedAtRoute("GetLocation", new { id = location.Id }, _mapper.Map<LocationDto>(unit));
             }
 
             return BadRequest("Error adding new unit");

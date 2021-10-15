@@ -9,6 +9,5 @@ namespace GGS.DTOs
     public class UnitTokenDto
     {
         public string Token { get; set; }
-        public virtual ICollection<LocationUnitDto> Locations { get; set; }
     }
 }

@@ -8,6 +8,7 @@ using AutoMapper.QueryableExtensions;
 using GGS.Data;
 using GGS.DTOs;
 using GGS.Entities;
+using GGS.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,10 +34,25 @@ namespace GGS.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<LocationDto>>> GetLocations()
         {
-            return await _context.Locations
+            var locations = await _context.Locations
                 .Include(p => p.Photos)
                 .ProjectTo<LocationDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
+            if (User.Identity is {IsAuthenticated: true})
+            {
+                var code = User.GetCode();
+                var unit = await _context.Units
+                    .Include(o => o.Locations)
+                    .ThenInclude(u => u.Location)
+                    .SingleOrDefaultAsync(x => x.Code == code);
+
+                var unitLocationIds = unit.Locations.Select(lu => lu.LocationId);
+
+                locations.ForEach(x => { if (unitLocationIds.Contains(x.Id)) { x.Collected = true; } });
+            }
+
+            return locations;
         }
 
         // GET api/<LocationsController>/5
