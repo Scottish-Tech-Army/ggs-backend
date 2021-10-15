@@ -13,10 +13,14 @@
   },
   {
     "Name": "Grey Friars Bobby Statue",
-    "Description": "",
+    "Description": "Greyfriars Bobby (4 May 1855 – 14 January 1872) was a Skye Terrier who became known in 19th-century Edinburgh for spending 14 years guarding the grave of his owner until he died on 14 January 1872. The story continues to be well known in Scotland, through several books and films.",
     "Latitude": 55.946874,
     "Longitude": -3.191229,
     "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/8/83/Greyfriars-bobby-edin.jpg",
+        "IsMain": true
+      }
     ]
   },
   {
@@ -26,7 +30,7 @@
     "Longitude": -3.196300,
     "Photos": [
       {
-        "Url": "https://en.wikipedia.org/wiki/Grassmarket#/media/File:East_end_of_the_Grassmarket,_Edinburgh_(composite).jpg",
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/9/99/East_end_of_the_Grassmarket%2C_Edinburgh_%28composite%29.jpg",
         "IsMain": true
       }
     ]
@@ -38,7 +42,7 @@
     "Longitude": -3.381797,
     "Photos": [
       {
-        "Url": "https://en.wikipedia.org/wiki/Forth_Bridge#/media/File:Scotland-2016-Aerial-Edinburgh-Forth_Bridge.jpg",
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Scotland-2016-Aerial-Edinburgh-Forth_Bridge.jpg",
         "IsMain": true
       }
     ]
@@ -50,7 +54,7 @@
     "Longitude": -3.1805205,
     "Photos": [
       {
-        "Url": "https://en.wikipedia.org/wiki/List_of_Robert_Burns_memorials#/media/File:Burns_Monument,_Calton_Hill,_Edinburgh.JPG",
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/3/32/Burns_Monument%2C_Calton_Hill%2C_Edinburgh.JPG",
         "IsMain": true
       }
     ]
@@ -62,7 +66,7 @@
     "Longitude": -3.194603,
     "Photos": [
       {
-        "Url": "https://en.wikipedia.org/wiki/David_Hume#/media/File:DavidHume.jpg",
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/0/0e/DavidHume.jpg",
         "IsMain": true
       }
     ]
@@ -74,7 +78,7 @@
     "Longitude": -3.1892527,
     "Photos": [
       {
-        "Url": "https://en.wikipedia.org/wiki/Old_College,_University_of_Edinburgh#/media/File:Old_College,_University_of_Edinburgh_(24923171570).jpg",
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Old_College%2C_University_of_Edinburgh_%2824923171570%29.jpg",
         "IsMain": true
       }
     ]
@@ -86,7 +90,7 @@
     "Longitude": -3.2007574,
     "Photos": [
       {
-        "Url": "https://en.wikipedia.org/wiki/Edinburgh_Castle#/media/File:Edinburgh_Castle_from_the_North.JPG",
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/2/26/Edinburgh_Castle_from_the_North.JPG",
         "IsMain": true
       }
     ]
@@ -98,7 +102,7 @@
     "Longitude": -3.1994563,
     "Photos": [
       {
-        "Url": "https://commons.wikimedia.org/wiki/File:George_IV_Statue_(Edinburgh)_-_01.jpg",
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/George_IV_Statue_%28Edinburgh%29_-_01.jpg/400px-George_IV_Statue_%28Edinburgh%29_-_01.jpg",
         "IsMain": true
       }
     ]
@@ -110,7 +114,7 @@
     "Longitude": -3.1798564,
     "Photos": [
       {
-        "Url": "https://en.wikipedia.org/wiki/Scottish_Parliament_Building#/media/File:The_Scottish_Parliament_-_geograph.org.uk_-_925016.jpg",
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/6/67/The_Scottish_Parliament_-_geograph.org.uk_-_925016.jpg",
         "IsMain": true
       }
     ]
@@ -122,7 +126,7 @@
     "Longitude": -3.1777573,
     "Photos": [
       {
-        "Url": "https://en.wikipedia.org/wiki/Arthur%27s_Seat#/media/File:Arthur's_Seat,_Edinburgh.JPG",
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Arthur%27s_Seat%2C_Edinburgh.JPG/640px-Arthur%27s_Seat%2C_Edinburgh.JPG",
         "IsMain": true
       }
     ]
