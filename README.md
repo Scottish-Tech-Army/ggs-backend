@@ -24,6 +24,7 @@ Base Url: http://localhost:5000/api
 ### Authorized Routes 
 |     URL       | HTTP Verb |       Description      |
 | ------------- |:---------:| :---------------------:|
-|  /locations   |    GET    | Includes collected locations |
+|  /locations   |   GET     | Includes collected locations |
 | /unit/login   |   POST    | Login to your unit     |
-| /unit/collect |   POST    | Login to your unit     |
+| /unit/collect |   POST    | Collect a location for your unit |
+|/unit/collected|   GET     | Show all locations your unit has collected  |

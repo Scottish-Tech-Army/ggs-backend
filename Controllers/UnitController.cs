@@ -92,5 +92,21 @@ namespace GGS.Controllers
 
             return BadRequest("Error adding new unit");
         }
+
+        [Authorize]
+        [Route("collected")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<UnitDto>>> GetUnitLocations()
+        {
+            var code = User.GetCode();
+            var unit = await _context.Units
+                .Include(o => o.Locations)
+                .ThenInclude(u => u.Location)
+                .SingleOrDefaultAsync(x => x.Code == code);
+
+            var locations = unit.Locations;
+
+            return Ok(_mapper.Map<IEnumerable<LocationUnit>, IEnumerable<LocationUnitDto>>(locations));
+        }
     }
 }
