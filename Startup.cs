@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GGS.Data;
+using GGS.Extensions;
 using GGS.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,15 +30,9 @@ namespace GGS
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddAutoMapper(typeof(AutoMapperProfiles).Assembly);
-            services.AddDbContext<DataContext>(options =>
-            {
-                options.UseSqlite(_config.GetConnectionString("DefaultConnection"));
-            });
+            services.AddApplicationServices(_config);
+            services.AddIdentityServices(_config);
             services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "GGS", Version = "v1" });
-            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,8 +41,6 @@ namespace GGS
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "GGS v1"));
             }
 
             app.UseHttpsRedirection();
@@ -58,6 +51,8 @@ namespace GGS
                 .AllowAnyMethod()
                 .AllowCredentials()
                 .WithOrigins("http://localhost:3000"));
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 

@@ -8,6 +8,7 @@ using AutoMapper.QueryableExtensions;
 using GGS.Data;
 using GGS.DTOs;
 using GGS.Entities;
+using GGS.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,10 +34,25 @@ namespace GGS.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<LocationDto>>> GetLocations()
         {
-            return await _context.Locations
+            var locations = await _context.Locations
                 .Include(p => p.Photos)
                 .ProjectTo<LocationDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
+            if (User.Identity is {IsAuthenticated: true})
+            {
+                var code = User.GetCode();
+                var unit = await _context.Units
+                    .Include(o => o.Locations)
+                    .ThenInclude(u => u.Location)
+                    .SingleOrDefaultAsync(x => x.Code == code);
+
+                var unitLocationIds = unit.Locations.Select(lu => lu.LocationId);
+
+                locations.ForEach(x => { if (unitLocationIds.Contains(x.Id)) { x.Collected = true; } });
+            }
+
+            return locations;
         }
 
         // GET api/<LocationsController>/5
@@ -47,70 +63,13 @@ namespace GGS.Controllers
                 .Include(p => p.Photos)
                 .ProjectTo<LocationDto>(_mapper.ConfigurationProvider)
                 .SingleOrDefaultAsync(x => x.Id == id);
-           if (location == null)
-            {
-                return NotFound(id);
-            }
-           return location;
-        }
-
-        // POST api/<LocationsController>
-        [HttpPost]
-        public async Task<ActionResult<LocationDto>> CreateLocation([FromBody] LocationDto locationDto)
-        {
-            var location = new Location()
-            {
-                Name = locationDto.Name,
-                Description = locationDto.Description,
-                Latitude = locationDto.Latitude,
-                Longitude = locationDto.Longitude
-            };
-            _context.Locations.Add(location);
-
-            if (await _context.SaveChangesAsync() > 0)
-            {
-                return CreatedAtRoute("GetLocation", new { id = location.Id }, _mapper.Map<LocationDto>(location));
-            }
-
-            return BadRequest("Error adding new location");
-        }
-
-        // PUT api/<LocationsController>/5
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateLocation([FromForm] Location location)
-        {
-            var dbLocation = await _context.Locations.FindAsync(location.Id);
-            if (dbLocation == null)
-            {
-                return NotFound();
-            }
-
-            _mapper.Map(location, dbLocation);
-
-            _context.Locations.Update(dbLocation);
-
-            if (await _context.SaveChangesAsync() > 0)
-            {
-                return NoContent();
-            }
-
-            return BadRequest("Failed to update location");
-        }
-
-        // DELETE api/<LocationsController>/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteLocation(int id)
-        {
-            var location = await _context.Locations.FindAsync(id);
+           
             if (location == null)
             {
-                return NotFound();
-            }
-
-            _context.Locations.Remove(location);
-            if (await _context.SaveChangesAsync() > 0) return Ok();
-
-            return BadRequest("Failed to Delete location");
+                return NotFound(id);
+            } 
+           
+           return location;
         }
     }
 }

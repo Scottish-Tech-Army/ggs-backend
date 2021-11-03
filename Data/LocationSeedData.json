@@ -1,14 +1,132 @@
 [
   {
     "Name": "Edinburgh Airport",
-    "Description":
-      "Edinburgh Airport is an airport located in the Ingliston area of Edinburgh, Scotland. It was the busiest airport in Scotland in 2019, handling over 14.7 million passengers. It was also the sixth-busiest airport in the United Kingdom by total passengers in 2019.",
+    "Description": "Edinburgh Airport is an airport located in the Ingliston area of Edinburgh, Scotland. It was the busiest airport in Scotland in 2019, handling over 14.7 million passengers. It was also the sixth-busiest airport in the United Kingdom by total passengers in 2019.",
     "Latitude": 55.949996,
     "Longitude": -3.370165,
     "Photos": [
       {
-        "Url":
-          "https://www.scotsman.com/images-e.jpimedia.uk/imagefetch/http://www.scotsman.com/webimage/Prestige.Item.1.75548113!image/image.jpg?crop=982:524,smart&width=990",
+        "Url": "https://www.scotsman.com/images-e.jpimedia.uk/imagefetch/http://www.scotsman.com/webimage/Prestige.Item.1.75548113!image/image.jpg?crop=982:524,smart&width=990",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Grey Friars Bobby Statue",
+    "Description": "Greyfriars Bobby (4 May 1855 – 14 January 1872) was a Skye Terrier who became known in 19th-century Edinburgh for spending 14 years guarding the grave of his owner until he died on 14 January 1872. The story continues to be well known in Scotland, through several books and films.",
+    "Latitude": 55.946874,
+    "Longitude": -3.191229,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/8/83/Greyfriars-bobby-edin.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Grassmarket",
+    "Description": "The Grassmarket was the site of a weekly market for cattle, horses and sheep, and many public executions.",
+    "Latitude": 55.947520,
+    "Longitude": -3.196300,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/9/99/East_end_of_the_Grassmarket%2C_Edinburgh_%28composite%29.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Forth Bridge",
+    "Description": "A wonder of the Victorian engineering world, this extraordinary steel bridge was built between 1882 and 1890. Almost 2 miles long, it expands by a metre between winter and summer.",
+    "Latitude": 55.986452,
+    "Longitude": -3.381797,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Scotland-2016-Aerial-Edinburgh-Forth_Bridge.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Burns Monument",
+    "Description": "More than a monument, this small temple was erected in 1831 in memory of Robert Burns 1759 -1792, Scotlands national poet.",
+    "Latitude": 55.9534892,
+    "Longitude": -3.1805205,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/3/32/Burns_Monument%2C_Calton_Hill%2C_Edinburgh.JPG",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "David Hume Statue",
+    "Description": "This statue commemorates the Scottish philosopher, David Hume 1711-1776.",
+    "Latitude": 55.9495405,
+    "Longitude": -3.194603,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/0/0e/DavidHume.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Old College",
+    "Description": "The birthplace of the University of Edinburgh, the Old College was constructed between 1789 and 1827.",
+    "Latitude": 55.9472097,
+    "Longitude": -3.1892527,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Old_College%2C_University_of_Edinburgh_%2824923171570%29.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Edinburgh Castle",
+    "Description": "An 11th-century castle and barracks housing the Crown Jewels and National War Museum of Scotland.",
+    "Latitude": 55.9485946,
+    "Longitude": -3.2007574,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/2/26/Edinburgh_Castle_from_the_North.JPG",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "King George IV Statue",
+    "Description": "Erected in 1831 this statue commemorates the king's visit to Edinburgh in 1822, the first visit by a Hanoverian monarch to Scotland.",
+    "Latitude": 55.9535255,
+    "Longitude": -3.1994563,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/George_IV_Statue_%28Edinburgh%29_-_01.jpg/400px-George_IV_Statue_%28Edinburgh%29_-_01.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Scottish Parliament Building, Holyrood",
+    "Description": "Home of the Scottish Parliament at Holyrood, within the UNESCO World Heritage Site in central Edinburgh.",
+    "Latitude": 55.9509277,
+    "Longitude": -3.1798564,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/6/67/The_Scottish_Parliament_-_geograph.org.uk_-_925016.jpg",
+        "IsMain": true
+      }
+    ]
+  },
+  {
+    "Name": "Arthur's Seat",
+    "Description": "An ancient volcano which is the main peak of the group of hills in Edinburgh, Scotland, which form most of Holyrood Park, described by Robert Louis Stevenson as 'a hill for magnitude, a mountain in virtue of its bold design'.",
+    "Latitude": 55.9474659,
+    "Longitude": -3.1777573,
+    "Photos": [
+      {
+        "Url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Arthur%27s_Seat%2C_Edinburgh.JPG/640px-Arthur%27s_Seat%2C_Edinburgh.JPG",
         "IsMain": true
       }
     ]

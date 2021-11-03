@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace GGS.DTOs
@@ -12,6 +13,7 @@ namespace GGS.DTOs
         public string Description { get; set; }
         public float Latitude { get; set; }
         public float Longitude { get; set; }
+        public bool Collected { get; set; }
         public ICollection<LocationPhotoDto> Photos { get; set; }
     }
 }

@@ -2,12 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using GGS.Data;
 using GGS.DTOs;
 using GGS.Entities;
+using GGS.Extensions;
+using GGS.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -20,92 +25,72 @@ namespace GGS.Controllers
     {
         private readonly DataContext _context;
         private readonly IMapper _mapper;
-        public UnitController(DataContext context, IMapper mapper)
+        private readonly ITokenService _tokenService;
+        public UnitController(DataContext context, IMapper mapper, ITokenService tokenService)
         {
             _mapper = mapper;
+            _tokenService = tokenService;
             _context = context;
         }
-        // GET: api/<UnitController>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<UnitDto>>> GetUnits()
-        {
-            return await _context.Units
-                .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
-                .ToListAsync();
-        }
 
-        // GET api/<UnitController>/5
-        [HttpGet("{id}", Name = "GetUnit")]
-        public async Task<ActionResult<UnitDto>> GetUnit(int id)
+        [AllowAnonymous]
+        [HttpPost("login")]
+        public async Task<ActionResult<UnitTokenDto>> Login(UnitLoginDto unitLoginDto)
         {
             var unit = await _context.Units
-                .Include(u => u.Locations)
+                .Where(x => x.Code == unitLoginDto.Code)
+                .Include(o => o.Locations)
+                .ThenInclude(u => u.Location)
                 .ProjectTo<UnitDto>(_mapper.ConfigurationProvider)
-                .SingleOrDefaultAsync(x => x.Id == id);
-            if (unit == null)
+                .SingleOrDefaultAsync();
+
+            if (unit == null) return Unauthorized("Invalid code");
+
+            return new UnitTokenDto
             {
-                return NotFound(id);
-            }
-            return unit;
+                Token = _tokenService.CreateToken(unit),
+            };
         }
 
-        // POST api/<UnitController>
+        [Authorize]
+        [Route("collect")]
         [HttpPost]
-        public async Task<ActionResult<UnitDto>> CreateUnit([FromBody] UnitDto unitDto)
+        public async Task<ActionResult<UnitDto>> CollectLocation(CollectionDto collectionDto)
         {
-            var unit = new Unit()
-            {
-                Name = unitDto.Name,
-                Code = unitDto.Code
-            };
-            _context.Units.Add(unit);
+            var code = User.GetCode();
+            var unit = await _context.Units
+                .Include(o => o.Locations)
+                .ThenInclude(u => u.Location)
+                .SingleOrDefaultAsync(x => x.Code == code);
 
+            var location = await _context.Locations
+                .SingleOrDefaultAsync(x => x.Id == collectionDto.Id);
+            if (location == null)
+            {
+                return NotFound("Location not found");
+            }
+
+            var locationCheck = unit.Locations.FirstOrDefault(l => l.LocationId == collectionDto.Id);
+            if (locationCheck != null)
+            {
+                return BadRequest("location has already been collected");
+            }
+
+            var locationUnit = new LocationUnit()
+            {
+                Location = location,
+                Unit = unit,
+            };
+            _context.LocationUnits.Add(locationUnit);
+            unit.Locations.Add(locationUnit);
+
+            _context.Units.Update(unit);
             if (await _context.SaveChangesAsync() > 0)
             {
-                return CreatedAtRoute("GetUnit", new { id = unit.Id }, _mapper.Map<UnitDto>(unit));
+                return CreatedAtRoute("GetLocation", new { id = location.Id }, _mapper.Map<LocationDto>(unit));
             }
 
             return BadRequest("Error adding new unit");
         }
-
-        // PUT api/<UnitController>/5
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUnit([FromForm] Unit unit)
-        {
-            var dbUnit = await _context.Units.FindAsync(unit.Id);
-            if (dbUnit == null)
-            {
-                return NotFound();
-            }
-
-            _mapper.Map(unit, dbUnit);
-
-            _context.Units.Update(dbUnit);
-
-            if (await _context.SaveChangesAsync() > 0)
-            {
-                return NoContent();
-            }
-
-            return BadRequest("Failed to update Unit");
-        }
-
-        // DELETE api/<UnitController>/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteUnit(int id)
-        {
-            var unit = await _context.Units.FindAsync(id);
-            if (unit == null)
-            {
-                return NotFound();
-            }
-
-            _context.Units.Remove(unit);
-            if (await _context.SaveChangesAsync() > 0) return Ok();
-
-            return BadRequest("Failed to Delete Unit");
-        }
-
-       
     }
 }
