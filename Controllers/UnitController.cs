@@ -77,6 +77,7 @@ namespace GGS.Controllers
             }
 
             var locationUnit = new LocationUnit()
+
             {
                 Location = location,
                 Unit = unit,
@@ -107,6 +108,5 @@ namespace GGS.Controllers
             var locations = unit.Locations;
 
             return Ok(_mapper.Map<IEnumerable<LocationUnit>, IEnumerable<LocationUnitDto>>(locations));
-        }
     }
 }
