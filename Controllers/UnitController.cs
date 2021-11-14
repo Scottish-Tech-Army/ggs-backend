@@ -77,6 +77,7 @@ namespace GGS.Controllers
             }
 
             var locationUnit = new LocationUnit()
+
             {
                 Location = location,
                 Unit = unit,
