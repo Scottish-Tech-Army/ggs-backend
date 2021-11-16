@@ -110,3 +110,4 @@ namespace GGS.Controllers
             return Ok(_mapper.Map<IEnumerable<LocationUnit>, IEnumerable<LocationUnitDto>>(locations));
     }
 }
+}
