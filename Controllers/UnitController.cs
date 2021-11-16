@@ -100,14 +100,20 @@ namespace GGS.Controllers
         public async Task<ActionResult<IEnumerable<UnitDto>>> GetUnitLocations()
         {
             var code = User.GetCode();
-            var unit = await _context.Units
-                .Include(o => o.Locations)
-                .ThenInclude(u => u.Location)
-                .SingleOrDefaultAsync(x => x.Code == code);
+            var locationUnits = await _context.LocationUnits
+                .Include(o => o.Location)
+                .Where(x => x.Unit.Code == code)
+                .ProjectTo<LocationUnitDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
 
-            var locations = unit.Locations;
+            var alteredLocations = locationUnits.Select(l =>
+            {
+                l.Location.Collected = true;
+                return l.Location;
+            }).ToList();
 
-            return Ok(_mapper.Map<IEnumerable<LocationUnit>, IEnumerable<LocationUnitDto>>(locations));
+            return Ok(alteredLocations);
+        }
     }
 }
 }
