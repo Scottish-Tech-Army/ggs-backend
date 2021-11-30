@@ -68,8 +68,8 @@ namespace GGS.Controllers
             {
                 return NotFound(id);
             } 
-           
-           return location;
+          
+            return location;
         }
     }
 }

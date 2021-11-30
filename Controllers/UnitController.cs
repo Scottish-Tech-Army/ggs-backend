@@ -77,6 +77,7 @@ namespace GGS.Controllers
             }
 
             var locationUnit = new LocationUnit()
+
             {
                 Location = location,
                 Unit = unit,
@@ -87,10 +88,31 @@ namespace GGS.Controllers
             _context.Units.Update(unit);
             if (await _context.SaveChangesAsync() > 0)
             {
-                return CreatedAtRoute("GetLocation", new { id = location.Id }, _mapper.Map<LocationDto>(unit));
+                return Ok();
             }
 
             return BadRequest("Error adding new unit");
+        }
+
+        [Authorize]
+        [Route("collected")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<UnitDto>>> GetUnitLocations()
+        {
+            var code = User.GetCode();
+            var locationUnits = await _context.LocationUnits
+                .Include(o => o.Location)
+                .Where(x => x.Unit.Code == code)
+                .ProjectTo<LocationUnitDto>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            var alteredLocations = locationUnits.Select(l =>
+            {
+                l.Location.Collected = true;
+                return l.Location;
+            }).ToList();
+
+            return Ok(alteredLocations);
         }
     }
 }
