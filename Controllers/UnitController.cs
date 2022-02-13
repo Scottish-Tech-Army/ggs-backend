@@ -55,7 +55,7 @@ namespace GGS.Controllers
         [Authorize]
         [Route("collect")]
         [HttpPost]
-        public async Task<ActionResult<UnitDto>> CollectLocation(CollectionDto collectionDto)
+        public async Task<IActionResult> CollectLocation(CollectionDto collectionDto)
         {
             var code = User.GetCode();
             var unit = await _context.Units
@@ -67,13 +67,13 @@ namespace GGS.Controllers
                 .SingleOrDefaultAsync(x => x.Id == collectionDto.Id);
             if (location == null)
             {
-                return NotFound("Location not found");
+                return NotFound(new { Message = "Location not found" });
             }
 
             var locationCheck = unit.Locations.FirstOrDefault(l => l.LocationId == collectionDto.Id);
             if (locationCheck != null)
             {
-                return BadRequest("location has already been collected");
+                return BadRequest(new { Message = "Location has already been collected"});
             }
 
             var locationUnit = new LocationUnit()
@@ -88,10 +88,10 @@ namespace GGS.Controllers
             _context.Units.Update(unit);
             if (await _context.SaveChangesAsync() > 0)
             {
-                return Ok();
+                return new OkObjectResult(new { Message = "Collected!!" });
             }
 
-            return BadRequest("Error adding new unit");
+            return BadRequest(new { Message = "Error adding new unit"});
         }
 
         [Authorize]
