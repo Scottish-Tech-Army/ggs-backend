@@ -97,22 +97,70 @@ namespace GGS.Controllers
         [Authorize]
         [Route("collected")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UnitDto>>> GetUnitLocations()
+        public async Task<ActionResult<IEnumerable<LocationDto>>> GetUnitLocations()
         {
             var code = User.GetCode();
             var locationUnits = await _context.LocationUnits
                 .Include(o => o.Location)
                 .Where(x => x.Unit.Code == code)
                 .ProjectTo<LocationUnitDto>(_mapper.ConfigurationProvider)
+                .Select(l => l.Location)
                 .ToListAsync();
 
-            var alteredLocations = locationUnits.Select(l =>
-            {
-                l.Location.Collected = true;
-                return l.Location;
-            }).ToList();
+            locationUnits.ForEach(x => { x.Collected = true; });
 
-            return Ok(alteredLocations);
+            return Ok(locationUnits);
+        }    
+        
+        [Authorize]
+        [Route("leaderboard")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<LeaderboardDto>>> GetLeaderboard()
+        {
+            var code = User.GetCode();
+
+            var collectedCount = _context.LocationUnits
+                .Include(o => o.Location)
+                .Where(x => x.Unit.Code == code)
+                .Select(lu => lu.Location)
+                .GroupBy(n => n.Area)
+                .Select(n => new
+                {
+                    Area = n.Key,
+                    Count = n.Count()
+                })
+                .OrderBy(n => n.Area)
+                .ToList();
+
+            var areaTotals = _context.Locations
+                .GroupBy(n => n.Area)
+                .Select(n => new
+                {
+                    Name = n.Key,
+                    Count = n.Count()
+                })
+                .OrderBy(n => n.Name);
+
+            var results = new List<LeaderboardDto>();
+            foreach (var area in areaTotals)
+            {
+                var collected = collectedCount
+                    .FirstOrDefault(c => c.Area == area.Name);
+
+                var leaderboard = new LeaderboardDto()
+                {
+                    Area = area.Name,
+                    PercentageCollected = 0
+                };
+                if (collected != null)
+                { 
+                    leaderboard.PercentageCollected = (int) Math.Round((double)(100 * collected.Count) / area.Count );
+                }
+
+                results.Add(leaderboard);
+            }
+
+            return Ok(results);
         }
     }
 }

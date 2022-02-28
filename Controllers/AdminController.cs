@@ -37,7 +37,8 @@ namespace GGS.Controllers
                 Name = locationDto.Name,
                 Description = locationDto.Description,
                 Latitude = locationDto.Latitude,
-                Longitude = locationDto.Longitude
+                Longitude = locationDto.Longitude,
+                Area = locationDto.Area
             };
             _context.Locations.Add(location);
 

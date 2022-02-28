@@ -13,6 +13,7 @@ namespace GGS.DTOs
         public string Description { get; set; }
         public float Latitude { get; set; }
         public float Longitude { get; set; }
+        public string Area { get; set; }
         public bool Collected { get; set; }
         public ICollection<LocationPhotoDto> Photos { get; set; }
     }
