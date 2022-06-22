@@ -1,0 +1,17 @@
+{
+  "name": "cdk-stacks",
+  "version": "0.1.0",
+  "bin": {
+    "cdk-stacks": "cdk-stack.js"
+  },
+  "scripts": {
+    "build": "echo \"The build step is not required when using JavaScript!\" && exit 0",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.9.0",
+    "aws-cdk-lib": "^2.9.0",
+    "esbuild": "^0.14.14",
+    "jest": "^27.5.1"
+  }
+}
