@@ -1,21 +1,21 @@
 {
-  "name": "ggs-lambda",
-  "version": "2.0.0",
-  "description": "CDK GGS Lambda function",
+  "name": "ggs-utils",
+  "version": "1.0.0",
+  "description": "GGS Utils functions",
   "main": "dist/index.js",
   "license": "Apache-2.0",
   "scripts": {
     "test": "jest",
     "tsc": "tsc",
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node16 --outfile=dist/index.js"
+    "build": "esbuild index.ts --bundle --platform=node --target=node16 --outfile=dist/index.js",
+    "upload-locations": "npm run build && node -e \"require('./dist/index.js').processSpreadsheet()\""
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.48.0",
     "@aws-sdk/util-dynamodb": "^3.48.0",
     "@babel/runtime": "^7.18.3",
-    "aws-lambda": "^1.0.7",
-    "es6-promise": "^4.2.8",
-    "isomorphic-fetch": "^3.0.0"
+    "dotenv": "^16.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.10",
@@ -24,7 +24,6 @@
     "@babel/plugin-transform-runtime": "^7.18.5",
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-typescript": "^7.17.12",
-    "@types/aws-lambda": "^8.10.100",
     "@types/jest": "^28.1.2",
     "babel-jest": "^28.1.1",
     "esbuild": "^0.14.45",
@@ -64,6 +63,8 @@
       "node"
     ],
     "maxWorkers": "50%",
-    "setupFilesAfterEnv": ["./setupTests.ts"]
+    "setupFilesAfterEnv": [
+      "./setupTests.ts"
+    ]
   }
 }
