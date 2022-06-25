@@ -1,6 +1,6 @@
 import { dynamodbClient } from "./aws";
 import { TEST_LOCATIONS_TABLE_NAME, TEST_SPREADSHEET_PATH } from "./setupTests";
-import { buildLocations, processSpreadsheet } from "./index";
+import { buildLocations, checkSpreadsheet, processSpreadsheet } from "./index";
 var XLSX = require("xlsx");
 
 jest.mock("./aws");
@@ -56,6 +56,16 @@ describe("buildLocations", () => {
     expect(
       result.find((location) => location.name === "Dalhousie Arch")
     ).toBeUndefined();
+  });
+});
+
+describe("checkSpreadsheet", () => {
+  it("success response", () => {
+    const result = checkSpreadsheet();
+
+    expect(result).toEqual(EXPECTED_LOCATION_COUNT);
+
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
   });
 });
 

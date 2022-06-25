@@ -1,7 +1,7 @@
 import { PutItemCommand, PutItemOutput } from "@aws-sdk/client-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 var XLSX = require("xlsx");
-require("dotenv").config();
+require("dotenv").config({ path: '.env.local' });
 import { dynamodbClient } from "./aws";
 
 type GGSLocation = {
@@ -162,6 +162,16 @@ async function uploadToDynamoDB(locations: GGSLocation[]) {
     );
     console.log(result);
   }
+}
+
+export function checkSpreadsheet() {
+  const locations = buildLocations(workbook);
+
+  locations.forEach((location) => {
+    console.log(location.locationId, location.name);
+  });
+
+  return locations.length
 }
 
 export async function processSpreadsheet() {

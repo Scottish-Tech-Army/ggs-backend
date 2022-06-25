@@ -8,6 +8,7 @@
     "test": "jest",
     "tsc": "tsc",
     "build": "esbuild index.ts --bundle --platform=node --target=node16 --outfile=dist/index.js",
+    "check-locations": "npm run build && node -e \"require('./dist/index.js').checkSpreadsheet()\"",
     "upload-locations": "npm run build && node -e \"require('./dist/index.js').processSpreadsheet()\""
   },
   "dependencies": {

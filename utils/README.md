@@ -11,4 +11,6 @@ LOCATIONS_TABLE_NAME = name of DynamoDB table for locations (from backend CDK ru
 SOURCE_SPREADSHEET_PATH = path to the GGS data spreadsheet
 ```
 
-To run the utility, call `npm run upload-locations`. It will upload the locations it can correctly parse and return errors for those it could not parse.
+To run the utility, call one of the following: 
+- `npm run check-locations` to attempt parsing of the spreadsheet, but not upload the results to DynamoDb.
+- `npm run upload-locations` to upload the locations it can correctly parse and return errors for those it could not parse.
