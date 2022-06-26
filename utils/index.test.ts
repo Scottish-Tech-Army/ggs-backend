@@ -10,10 +10,10 @@ var XLSX = require("xlsx");
 
 jest.mock("./aws");
 
-const EXPECTED_LOCATION_COUNT = 59;
+const EXPECTED_LOCATION_COUNT = 62;
 
 // Expected test location from processing test spreadsheet
-const INDEX_LYNN_FALLS = 39;
+const INDEX_LYNN_FALLS = 42;
 
 const LOCATION_LYNN_FALLS = expect.objectContaining({
   challenge: "Try your hand at some nature photography!",
@@ -26,7 +26,13 @@ const LOCATION_LYNN_FALLS = expect.objectContaining({
   locationId: "ayrshirenorth-dalry-lynnfalls",
   longitude: -4.73272769919101,
   name: "Lynn Falls ",
-  photos: [],
+  photos: [
+    {
+      attribution: "Bob Jones",
+      copyright: "COPYRIGHT MESSAGE",
+      url: "https://d9si0f25nnc9u.cloudfront.net/ayrshirenorth-dalry-lynnfalls.jpg",
+    },
+  ],
   region: "Ayrshire North",
 });
 
@@ -41,7 +47,19 @@ const DYNAMODB_LYNN_FALLS = {
   locationId: { S: "ayrshirenorth-dalry-lynnfalls" },
   longitude: { N: "-4.73272769919101" },
   name: { S: "Lynn Falls " },
-  photos: { L: [] },
+  photos: {
+    L: [
+      {
+        M: {
+          attribution: { S: "Bob Jones" },
+          copyright: { S: "COPYRIGHT MESSAGE" },
+          url: {
+            S: "https://d9si0f25nnc9u.cloudfront.net/ayrshirenorth-dalry-lynnfalls.jpg",
+          },
+        },
+      },
+    ],
+  },
   region: { S: "Ayrshire North" },
 };
 
