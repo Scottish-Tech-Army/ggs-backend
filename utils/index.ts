@@ -1,7 +1,7 @@
 import { PutItemCommand, PutItemOutput } from "@aws-sdk/client-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 var XLSX = require("xlsx");
-require("dotenv").config({ path: '.env.local' });
+require("dotenv").config({ path: ".env.local" });
 import { dynamodbClient } from "./aws";
 
 type GGSLocation = {
@@ -33,14 +33,6 @@ const sheetNames = [...workbook.SheetNames];
 // Skip the overview sheet
 sheetNames.shift();
 
-function getOrdinate(input: string | number): number {
-  if (typeof input === "number") {
-    return input;
-  }
-
-  return input ? parseFloat(input.trim()) : 0;
-}
-
 // Each sheet has a different name for the column...
 function getPhotoColumnKey(sheetJson: any): string {
   let photoColumnKey: string | undefined = undefined;
@@ -66,6 +58,70 @@ function createLocationId(
   return `${sanitise(county)}-${sanitise(city)}-${sanitise(name)}`;
 }
 
+type Coordinate = {
+  latitude: number;
+  longitude: number;
+};
+
+const REGEX_DEG_MIN_SEC = /^\s*([+-]?\d+)\D+(\d+)\D+(\d+(\.\d+)?)\D*$/;
+
+function getOrdinate(input: string | number | undefined): number {
+  if (typeof input === "number") {
+    return Number.isInteger(input) ? 0 : input;
+  }
+
+  const result = input ? parseFloat(input.trim()) : 0;
+  if (!result || Number.isNaN(result)) {
+    // Input is unlikely to be valid ordinate
+    return 0;
+  }
+
+  if (!Number.isInteger(result)) {
+    return result;
+  }
+
+  // Integer suggests degree minute second format - attempt to parse
+  const components = input!.match(REGEX_DEG_MIN_SEC);
+  if (!components) {
+    return 0;
+  }
+
+  return (
+    parseFloat(components[1]) +
+    parseFloat(components[2]) / 60 +
+    parseFloat(components[3]) / 3600
+  );
+}
+
+export function parseCoordinates(
+  inputLatitude: string | number | undefined,
+  inputLongitude: string | number | undefined
+): Coordinate | undefined {
+  const latitude = getOrdinate(inputLatitude);
+  let longitude = getOrdinate(inputLongitude);
+
+  if (!latitude || !longitude) {
+    // One of the ordinates is probably bad
+    console.warn("Probably bad lat/long: ", inputLatitude, inputLongitude);
+    return undefined;
+  }
+
+  // Handle incorrect signs for longitudes - everything is west of prime meridian
+  longitude = -Math.abs(longitude);
+
+  if (latitude < 50 || latitude > 61 || longitude < -9 || longitude > 0) {
+    // Out of range coordinates
+    console.warn(
+      "Probably transposed lat/long: ",
+      inputLatitude,
+      inputLongitude
+    );
+    return undefined;
+  }
+
+  return { latitude, longitude };
+}
+
 export function buildLocations(workbook: any): GGSLocation[] {
   let successCount = 0;
   let failCount = 0;
@@ -75,7 +131,7 @@ export function buildLocations(workbook: any): GGSLocation[] {
     const contents = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
       range: ROWS_TO_SKIP,
     });
-      // TODO photo handling
+    // TODO photo handling
     // let photoColumnKey = getPhotoColumnKey(contents);
 
     // Some column values carry forward (ie not populated in succeeding rows)
@@ -97,30 +153,24 @@ export function buildLocations(workbook: any): GGSLocation[] {
       // console.log(photoRef);
       // https://en.wikipedia.org/w/api.php?format=json&action=query&titles=File:Crocodile_Rock,_Millport.jpg&prop=imageinfo&iiprop=user|extmetadata|url&iiextmetadatafilter=LicenseShortName
 
-      // Quick & dirty processing of various lat/long formats
-      // TODO either convert all to digital or parse deg/min/sec
-      const latitude = getOrdinate(row[COLUMN_LATITUDE]);
-      const longitude = -Math.abs(getOrdinate(row[COLUMN_LONGITUDE]));
+      const coordinates = parseCoordinates(
+        row[COLUMN_LATITUDE],
+        row[COLUMN_LONGITUDE]
+      );
 
       const description = row[COLUMN_DESCRIPTION];
       const challenge = row[COLUMN_CHALLENGE];
-      if (
-        !name ||
-        !county ||
-        !latitude ||
-        !longitude ||
-        !description ||
-        !challenge
-      ) {
-        console.warn("Incomplete location: ", sheetName, {
+      if (!coordinates) {
+        console.warn("Incomplete location coordinates: ", sheetName, {
           [COLUMN_COUNTY]: county,
           [COLUMN_CITY]: city,
-          ...row,
+          [COLUMN_NAME]: row[COLUMN_NAME],
+          [COLUMN_LATITUDE]: row[COLUMN_LATITUDE],
+          [COLUMN_LONGITUDE]: row[COLUMN_LONGITUDE],
         });
         failCount++;
-      } else if (Number.isInteger(latitude) || Number.isInteger(longitude)) {
-        // Unlikely to have an exact integer for an ordinate
-        console.warn("Probably bad lat/long: ", sheetName, {
+      } else if (!name || !county || !description || !challenge) {
+        console.warn("Incomplete location information: ", sheetName, {
           [COLUMN_COUNTY]: county,
           [COLUMN_CITY]: city,
           ...row,
@@ -132,8 +182,8 @@ export function buildLocations(workbook: any): GGSLocation[] {
           region: sheetName,
           county,
           city,
-          latitude,
-          longitude,
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude,
           name,
           description,
           challenge,
@@ -160,7 +210,6 @@ async function uploadToDynamoDB(locations: GGSLocation[]) {
         Item: marshall(location, { removeUndefinedValues: true }),
       })
     );
-    console.log(result);
   }
 }
 
@@ -171,7 +220,7 @@ export function checkSpreadsheet() {
     console.log(location.locationId, location.name);
   });
 
-  return locations.length
+  return locations.length;
 }
 
 export async function processSpreadsheet() {

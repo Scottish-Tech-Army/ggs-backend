@@ -1,14 +1,19 @@
 import { dynamodbClient } from "./aws";
 import { TEST_LOCATIONS_TABLE_NAME, TEST_SPREADSHEET_PATH } from "./setupTests";
-import { buildLocations, checkSpreadsheet, processSpreadsheet } from "./index";
+import {
+  buildLocations,
+  checkSpreadsheet,
+  parseCoordinates,
+  processSpreadsheet,
+} from "./index";
 var XLSX = require("xlsx");
 
 jest.mock("./aws");
 
-const EXPECTED_LOCATION_COUNT = 62;
+const EXPECTED_LOCATION_COUNT = 59;
 
 // Expected test location from processing test spreadsheet
-const INDEX_LYNN_FALLS = 42;
+const INDEX_LYNN_FALLS = 39;
 
 const LOCATION_LYNN_FALLS = expect.objectContaining({
   challenge: "Try your hand at some nature photography!",
@@ -83,5 +88,99 @@ describe("processSpreadsheet", () => {
         },
       })
     );
+  });
+});
+
+describe("parseCoordinates", () => {
+  it("success response with string decimal values", async () => {
+    expect(parseCoordinates("55.76281N", "-4.014507E")).toEqual({
+      latitude: 55.76281,
+      longitude: -4.014507,
+    });
+
+    // Handle wrong longitude direction
+    expect(parseCoordinates("55.79656N", "-4.0262W")).toEqual({
+      latitude: 55.79656,
+      longitude: -4.0262,
+    });
+
+    // Extra characters
+    expect(parseCoordinates("57.6512° N", "3.3055° W")).toEqual({
+      latitude: 57.6512,
+      longitude: -3.3055,
+    });
+    expect(
+      parseCoordinates("56.2941 / 56°17'38\"N", "-3.7127 / 3°42'45\"W")
+    ).toEqual({
+      latitude: 56.2941,
+      longitude: -3.7127,
+    });
+  });
+
+  it("success response with numeric decimal values", async () => {
+    expect(parseCoordinates(57.13254, -2.20171)).toEqual({
+      latitude: 57.13254,
+      longitude: -2.20171,
+    });
+
+    // In cases where longitude is missing sign
+    expect(parseCoordinates(55.7814, 4.2961)).toEqual({
+      latitude: 55.7814,
+      longitude: -4.2961,
+    });
+
+    // High precision
+    expect(parseCoordinates(56.0007889699862, -3.84045798674573)).toEqual({
+      latitude: 56.0007889699862,
+      longitude: -3.84045798674573,
+    });
+  });
+
+  it("success response with degree minute seconds values", async () => {
+    expect(parseCoordinates("56°07'23.3\"N", "3°07'23.1\"W")).toEqual({
+      latitude: 56.12313888888889,
+      longitude: -3.123083333333333,
+    });
+
+    expect(parseCoordinates("56° 07' 23.3 \"N", "3° 07 ' 23.1 \"W")).toEqual({
+      latitude: 56.12313888888889,
+      longitude: -3.123083333333333,
+    });
+
+    expect(parseCoordinates("57°36′58′′N", "3°31′27.55′′W")).toEqual({
+      latitude: 57.61611111111111,
+      longitude: -3.5243194444444446,
+    });
+
+    expect(parseCoordinates("56°07'23\"N", "3°07'23\"W")).toEqual({
+      latitude: 56.12305555555555,
+      longitude: -3.1230555555555557,
+    });
+  });
+
+  it("fail with missing latitude", async () => {
+    expect(parseCoordinates(57.13254, undefined)).toBeUndefined();
+  });
+
+  it("fail with missing longitude", async () => {
+    expect(parseCoordinates(undefined, -2.20171)).toBeUndefined();
+  });
+
+  it("fail with missing decimal point", async () => {
+    expect(parseCoordinates(56731548, -2.660825)).toBeUndefined();
+    expect(parseCoordinates(56.731548, -2660825)).toBeUndefined();
+    expect(parseCoordinates(56731548, -2660825)).toBeUndefined();
+  });
+
+  it("fail with missing seconds", async () => {
+    expect(parseCoordinates("56° 13' N", "2 41' W")).toBeUndefined();
+  });
+
+  it("fail with transposed latitude and longitude", async () => {
+    expect(parseCoordinates(-2.20171, 57.13254)).toBeUndefined();
+  });
+
+  it("fail with invalid input", async () => {
+    expect(parseCoordinates("XXX", "YYY")).toBeUndefined();
   });
 });
