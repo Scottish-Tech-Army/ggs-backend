@@ -9,6 +9,7 @@ To prepare, create a `.env.local` file with the following contents
 ```
 LOCATIONS_TABLE_NAME = name of DynamoDB table for locations (from backend CDK run)
 SOURCE_SPREADSHEET_PATH = path to the GGS data spreadsheet
+PHOTOS_BASEURL = URL of CloudFront distribution providing photos bucket
 ```
 
 To run the utility, call one of the following: 

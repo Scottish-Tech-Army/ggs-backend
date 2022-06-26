@@ -4,6 +4,13 @@ var XLSX = require("xlsx");
 require("dotenv").config({ path: ".env.local" });
 import { dynamodbClient } from "./aws";
 
+type GGSPhoto = {
+  url: string;
+  originalUrl?: string;
+  copyright?: string;
+  attribution?: string;
+};
+
 type GGSLocation = {
   locationId: string;
   region: string;
@@ -14,9 +21,11 @@ type GGSLocation = {
   name: string;
   description: string;
   challenge: string;
-  photos: any[];
+  photos: GGSPhoto[];
 };
 
+const COLUMN_FIRSTNAME = "First name";
+const COLUMN_SURNAME = "Surname";
 const COLUMN_COUNTY = "District/ county";
 const COLUMN_CITY = "City/town";
 const COLUMN_NAME = "Name of location";
@@ -26,6 +35,8 @@ const COLUMN_DESCRIPTION = "Description of map point";
 const COLUMN_CHALLENGE = "Challenge";
 
 const ROWS_TO_SKIP = 3;
+
+const PHOTOS_BASEURL = process.env.PHOTOS_BASEURL;
 
 var workbook = XLSX.readFile(process.env.SOURCE_SPREADSHEET_PATH);
 
@@ -125,6 +136,8 @@ export function parseCoordinates(
 export function buildLocations(workbook: any): GGSLocation[] {
   let successCount = 0;
   let failCount = 0;
+  let photoLinkCount = 0;
+  let photoFileCount = 0;
   const result: GGSLocation[] = [];
 
   sheetNames.forEach((sheetName) => {
@@ -132,13 +145,22 @@ export function buildLocations(workbook: any): GGSLocation[] {
       range: ROWS_TO_SKIP,
     });
     // TODO photo handling
-    // let photoColumnKey = getPhotoColumnKey(contents);
+    let photoColumnKey = getPhotoColumnKey(contents);
 
+    console.log("Sheet", sheetName);
+    
     // Some column values carry forward (ie not populated in succeeding rows)
     let county: string = "";
     let city: string | undefined = undefined;
+    let attributionName : string | undefined= undefined;
 
     contents.forEach((row: Record<string, any>) => {
+      const newForename = row[COLUMN_FIRSTNAME];
+      const newSurname = row[COLUMN_SURNAME];
+      if (newForename || newSurname) {
+        attributionName = `${newForename} ${newSurname}`.trim();
+      }
+
       const newCounty = row[COLUMN_COUNTY];
       if (newCounty) {
         county = newCounty;
@@ -149,8 +171,24 @@ export function buildLocations(workbook: any): GGSLocation[] {
       const locationId = createLocationId(county, city, name);
 
       // TODO photo handling
-      // const photoRef = row[photoColumnKey];
-      // console.log(photoRef);
+      const photoRef = row[photoColumnKey];
+      const photos:GGSPhoto[] = [];
+
+      if (photoRef?.includes("http")) {
+        // Linked photo - ignore for now
+        console.log("Photo link", photoRef);
+        photoLinkCount++;
+      } else if (photoRef) {
+        // File photo
+        photos.push({
+          url: `${PHOTOS_BASEURL}/${locationId}.jpg`,
+          attribution: attributionName,
+          copyright: "COPYRIGHT MESSAGE"
+        })
+
+        photoFileCount++
+      }
+
       // https://en.wikipedia.org/w/api.php?format=json&action=query&titles=File:Crocodile_Rock,_Millport.jpg&prop=imageinfo&iiprop=user|extmetadata|url&iiextmetadatafilter=LicenseShortName
 
       const coordinates = parseCoordinates(
@@ -187,7 +225,7 @@ export function buildLocations(workbook: any): GGSLocation[] {
           name,
           description,
           challenge,
-          photos: [],
+          photos,
         });
         successCount++;
       }
@@ -196,6 +234,8 @@ export function buildLocations(workbook: any): GGSLocation[] {
 
   console.log("success: ", successCount);
   console.log("fail: ", failCount);
+  console.log("photo links: ", photoLinkCount);
+  console.log("photo files: ", photoFileCount);
   return result;
 }
 
