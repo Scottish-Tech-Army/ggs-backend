@@ -34,8 +34,6 @@ type WikimediaPhoto = {
   copyright: string;
 };
 
-const COLUMN_FIRSTNAME = "First name";
-const COLUMN_SURNAME = "Surname";
 const COLUMN_COUNTY = "District/ county";
 const COLUMN_CITY = "City/town";
 const COLUMN_NAME = "Name of location";
@@ -171,11 +169,7 @@ export async function getWikimediaPhotoData(
 let photoLinkCount = 0;
 let photoFileCount = 0;
 
-export async function getPhotos(
-  locationId: string,
-  photoRef: string,
-  attributionName: string | undefined
-) {
+export async function getPhotos(locationId: string, photoRef: string) {
   const photos: GGSPhoto[] = [];
 
   if (PHOTO_LINKS[photoRef]) {
@@ -218,11 +212,9 @@ export async function getPhotos(
     console.log("Unprocessed photo link", locationId, photoRef);
     photoLinkCount++;
   } else if (photoRef) {
-    // File photo
+    // File photo - no attribution or copyright requested
     photos.push({
       url: `${PHOTOS_BASEURL}/${locationId}.jpg`,
-      attribution: attributionName,
-      copyright: "COPYRIGHT MESSAGE",
     });
 
     photoFileCount++;
@@ -249,15 +241,8 @@ export async function buildLocations(workbook: any): Promise<GGSLocation[]> {
     // Some column values carry forward (ie not populated in succeeding rows)
     let county: string = "";
     let city: string | undefined = undefined;
-    let attributionName: string | undefined = undefined;
 
     for (let row of contents) {
-      const newForename = row[COLUMN_FIRSTNAME];
-      const newSurname = row[COLUMN_SURNAME];
-      if (newForename || newSurname) {
-        attributionName = `${newForename} ${newSurname}`.trim();
-      }
-
       const newCounty = row[COLUMN_COUNTY];
       if (newCounty) {
         county = newCounty;
@@ -269,8 +254,7 @@ export async function buildLocations(workbook: any): Promise<GGSLocation[]> {
 
       const photos: GGSPhoto[] = await getPhotos(
         locationId,
-        row[photoColumnKey],
-        attributionName
+        row[photoColumnKey]
       );
 
       const coordinates = parseCoordinates(

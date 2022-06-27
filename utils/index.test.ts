@@ -91,8 +91,6 @@ const LOCATION_LYNN_FALLS = expect.objectContaining({
   name: "Lynn Falls ",
   photos: [
     {
-      attribution: "Bob Jones",
-      copyright: "COPYRIGHT MESSAGE",
       url: `${TEST_PHOTOS_BASEURL}/ayrshirenorth-dalry-lynnfalls.jpg`,
     },
   ],
@@ -114,8 +112,6 @@ const DYNAMODB_LYNN_FALLS = {
     L: [
       {
         M: {
-          attribution: { S: "Bob Jones" },
-          copyright: { S: "COPYRIGHT MESSAGE" },
           url: {
             S: `${TEST_PHOTOS_BASEURL}/ayrshirenorth-dalry-lynnfalls.jpg`,
           },
@@ -329,11 +325,7 @@ describe("getPhotos", () => {
   it("success response with archived photo", async () => {
     fetchMock.mockResponse(WIKIMEDIA_RESPONSE);
 
-    const result = await getPhotos(
-      LOCATION_ID,
-      ARCHIVED_PHOTO_REF,
-      "Doesn't matter"
-    );
+    const result = await getPhotos(LOCATION_ID, ARCHIVED_PHOTO_REF);
 
     expect(result).toEqual([
       {
@@ -351,11 +343,7 @@ describe("getPhotos", () => {
   it("success response with wikimedia photo", async () => {
     fetchMock.mockResponse(WIKIMEDIA_RESPONSE);
 
-    const result = await getPhotos(
-      LOCATION_ID,
-      WIKIMEDIA_URL,
-      "Doesn't matter"
-    );
+    const result = await getPhotos(LOCATION_ID, WIKIMEDIA_URL);
 
     expect(result).toEqual([
       {
@@ -375,31 +363,10 @@ describe("getPhotos", () => {
   it("success response with file photo", async () => {
     fetchMock.mockResponse(WIKIMEDIA_RESPONSE);
 
-    const result = await getPhotos(
-      LOCATION_ID,
-      "Local file.jpg",
-      ATTRIBUTION_NAME
-    );
+    const result = await getPhotos(LOCATION_ID, "Local file.jpg");
 
     expect(result).toEqual([
       {
-        attribution: ATTRIBUTION_NAME,
-        copyright: "COPYRIGHT MESSAGE",
-        url: `${TEST_PHOTOS_BASEURL}/new-location.jpg`,
-      },
-    ]);
-
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("success response with file photo without attribution", async () => {
-    fetchMock.mockResponse(WIKIMEDIA_RESPONSE);
-
-    const result = await getPhotos(LOCATION_ID, "Local file.jpg", undefined);
-
-    expect(result).toEqual([
-      {
-        copyright: "COPYRIGHT MESSAGE",
         url: `${TEST_PHOTOS_BASEURL}/new-location.jpg`,
       },
     ]);
