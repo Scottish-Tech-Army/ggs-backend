@@ -3,6 +3,8 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 var XLSX = require("xlsx");
 require("dotenv").config({ path: ".env.local" });
 import { dynamodbClient } from "./aws";
+import { PHOTO_LINKS } from "./photoLinks";
+require("isomorphic-fetch");
 
 type GGSPhoto = {
   url: string;
@@ -22,6 +24,14 @@ type GGSLocation = {
   description: string;
   challenge: string;
   photos: GGSPhoto[];
+};
+
+type WikimediaPhoto = {
+  imageUrl: string;
+  filename: string;
+  originalUrl: string;
+  attribution: string;
+  copyright: string;
 };
 
 const COLUMN_FIRSTNAME = "First name";
@@ -133,14 +143,101 @@ export function parseCoordinates(
   return { latitude, longitude };
 }
 
-export function buildLocations(workbook: any): GGSLocation[] {
+export async function getWikimediaPhotoData(
+  wikiUrl: string
+): Promise<WikimediaPhoto> {
+  const wikiFile = wikiUrl.substring(
+    "https://commons.wikimedia.org/wiki/File:".length
+  );
+
+  const queryUrl = `https://en.wikipedia.org/w/api.php?format=json&action=query&titles=File:${wikiFile}&prop=imageinfo&iiprop=user|extmetadata|url&iiextmetadatafilter=LicenseShortName&iiurlwidth=640`;
+
+  const response = await fetch(queryUrl, { method: "GET" })
+    .then((data) => data.json())
+    .catch((err) => {
+      console.error(err);
+    });
+  const imageinfo = (Object.values(response.query.pages)[0] as any)
+    .imageinfo[0];
+  return {
+    imageUrl: imageinfo.thumburl,
+    filename: imageinfo.thumburl.split("/").pop(),
+    originalUrl: wikiUrl,
+    attribution: imageinfo.user,
+    copyright: imageinfo.extmetadata.LicenseShortName.value,
+  };
+}
+
+let photoLinkCount = 0;
+let photoFileCount = 0;
+
+export async function getPhotos(
+  locationId: string,
+  photoRef: string,
+  attributionName: string | undefined
+) {
+  const photos: GGSPhoto[] = [];
+
+  if (PHOTO_LINKS[photoRef]) {
+    // Already processed linked photo - skip fetching again
+    console.log("Using archived photo link", photoRef);
+    const archivedPhoto = PHOTO_LINKS[photoRef];
+    photos.push({
+      url: `${PHOTOS_BASEURL}/${archivedPhoto.file}`,
+      attribution: archivedPhoto.attribution,
+      copyright: archivedPhoto.copyright,
+      originalUrl: archivedPhoto.originalUrl,
+    });
+    photoLinkCount++;
+  } else if (photoRef?.startsWith("https://commons.wikimedia.org/wiki/File:")) {
+    // Linked wikimedia photo
+    const wikiPhotoData = await getWikimediaPhotoData(photoRef);
+    // Throttle fetch rate to avoid annoying wikimedia
+    await new Promise((r) => setTimeout(r, 2000));
+    const photo = {
+      url: `${PHOTOS_BASEURL}/${wikiPhotoData.filename}`,
+      attribution: wikiPhotoData.attribution,
+      copyright: wikiPhotoData.copyright,
+      originalUrl: wikiPhotoData.originalUrl,
+    };
+    console.log("Upload this photo to the photos bucket:");
+    console.log(wikiPhotoData.imageUrl);
+    console.log("Then add the following to PHOTO_LINKS:");
+    console.log(
+      `"${photoRef}": ${JSON.stringify({
+        file: wikiPhotoData.filename,
+        attribution: wikiPhotoData.attribution,
+        copyright: wikiPhotoData.copyright,
+        originalUrl: wikiPhotoData.originalUrl,
+      })},`
+    );
+    photos.push(photo);
+    photoLinkCount++;
+  } else if (photoRef?.includes("http")) {
+    // Linked photo - manually process and add to PHOTO_LINKS
+    console.log("Unprocessed photo link", locationId, photoRef);
+    photoLinkCount++;
+  } else if (photoRef) {
+    // File photo
+    photos.push({
+      url: `${PHOTOS_BASEURL}/${locationId}.jpg`,
+      attribution: attributionName,
+      copyright: "COPYRIGHT MESSAGE",
+    });
+
+    photoFileCount++;
+  }
+  return photos;
+}
+
+export async function buildLocations(workbook: any): Promise<GGSLocation[]> {
   let successCount = 0;
   let failCount = 0;
-  let photoLinkCount = 0;
-  let photoFileCount = 0;
+  photoLinkCount = 0;
+  photoFileCount = 0;
   const result: GGSLocation[] = [];
 
-  sheetNames.forEach((sheetName) => {
+  for (let sheetName of sheetNames) {
     const contents = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
       range: ROWS_TO_SKIP,
     });
@@ -148,13 +245,13 @@ export function buildLocations(workbook: any): GGSLocation[] {
     let photoColumnKey = getPhotoColumnKey(contents);
 
     console.log("Sheet", sheetName);
-    
+
     // Some column values carry forward (ie not populated in succeeding rows)
     let county: string = "";
     let city: string | undefined = undefined;
-    let attributionName : string | undefined= undefined;
+    let attributionName: string | undefined = undefined;
 
-    contents.forEach((row: Record<string, any>) => {
+    for (let row of contents) {
       const newForename = row[COLUMN_FIRSTNAME];
       const newSurname = row[COLUMN_SURNAME];
       if (newForename || newSurname) {
@@ -170,26 +267,11 @@ export function buildLocations(workbook: any): GGSLocation[] {
       const name = row[COLUMN_NAME];
       const locationId = createLocationId(county, city, name);
 
-      // TODO photo handling
-      const photoRef = row[photoColumnKey];
-      const photos:GGSPhoto[] = [];
-
-      if (photoRef?.includes("http")) {
-        // Linked photo - ignore for now
-        console.log("Photo link", photoRef);
-        photoLinkCount++;
-      } else if (photoRef) {
-        // File photo
-        photos.push({
-          url: `${PHOTOS_BASEURL}/${locationId}.jpg`,
-          attribution: attributionName,
-          copyright: "COPYRIGHT MESSAGE"
-        })
-
-        photoFileCount++
-      }
-
-      // https://en.wikipedia.org/w/api.php?format=json&action=query&titles=File:Crocodile_Rock,_Millport.jpg&prop=imageinfo&iiprop=user|extmetadata|url&iiextmetadatafilter=LicenseShortName
+      const photos: GGSPhoto[] = await getPhotos(
+        locationId,
+        row[photoColumnKey],
+        attributionName
+      );
 
       const coordinates = parseCoordinates(
         row[COLUMN_LATITUDE],
@@ -229,8 +311,8 @@ export function buildLocations(workbook: any): GGSLocation[] {
         });
         successCount++;
       }
-    });
-  });
+    }
+  }
 
   console.log("success: ", successCount);
   console.log("fail: ", failCount);
@@ -253,8 +335,8 @@ async function uploadToDynamoDB(locations: GGSLocation[]) {
   }
 }
 
-export function checkSpreadsheet() {
-  const locations = buildLocations(workbook);
+export async function checkSpreadsheet() {
+  const locations = await buildLocations(workbook);
 
   locations.forEach((location) => {
     console.log(location.locationId, location.name);
@@ -264,7 +346,7 @@ export function checkSpreadsheet() {
 }
 
 export async function processSpreadsheet() {
-  const locations = buildLocations(workbook);
+  const locations = await buildLocations(workbook);
 
   locations.forEach((location) => {
     console.log(location.locationId, location.name);
