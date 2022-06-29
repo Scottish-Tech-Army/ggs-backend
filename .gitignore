@@ -1,2 +1,6 @@
 node_modules
 cdk.out
+coverage
+utils/.env.local
+utils/Digital Safari data UPDATED.xlsx
+utils/dist/index.js

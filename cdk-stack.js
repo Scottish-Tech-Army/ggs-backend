@@ -5,6 +5,9 @@ const dynamodb = require("aws-cdk-lib/aws-dynamodb");
 const { NodejsFunction } = require("aws-cdk-lib/aws-lambda-nodejs");
 const lambda = require("aws-cdk-lib/aws-lambda");
 const apigateway = require("aws-cdk-lib/aws-apigateway");
+const { Bucket } = require("aws-cdk-lib/aws-s3");
+const cloudfront = require("aws-cdk-lib/aws-cloudfront");
+const origins = require("aws-cdk-lib/aws-cloudfront-origins");
 
 const app = new cdk.App();
 const envStageName = app.node.tryGetContext("env");
@@ -20,7 +23,6 @@ const stackId = "GGS-Backend-" + envStageName;
 const resourcePrefix = "GGS-" + envStageName;
 
 class CdkBackendStack extends cdk.Stack {
-
   constructor(scope) {
     super(scope, stackId);
 
@@ -28,8 +30,45 @@ class CdkBackendStack extends cdk.Stack {
     const stack = cdk.Stack.of(this);
     const region = stack.region;
 
+    const LOCATION_PHOTOS_BUCKET_NAME =
+      resourcePrefix.toLowerCase() + "-location-photos";
+    const DISTRIBUTION_NAME = stackId + "-Distribution";
+
     const LOCATIONS_TABLE_NAME = resourcePrefix + "-Locations";
     const UNITS_TABLE_NAME = resourcePrefix + "-Units";
+
+    // S3 bucket for location photos
+
+    const locationPhotosBucket = new Bucket(this, "Location Photos", {
+      bucketName: LOCATION_PHOTOS_BUCKET_NAME,
+    });
+
+    new cdk.CfnOutput(this, "Location Photos bucket", {
+      value: locationPhotosBucket.bucketName,
+      description: "S3 bucket containing location photos",
+    });
+
+    // CloudFront distribution for location photos
+
+    const locationPhotosDistribution = new cloudfront.Distribution(
+      this,
+      DISTRIBUTION_NAME,
+      {
+        defaultBehavior: {
+          origin: new origins.S3Origin(locationPhotosBucket),
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          viewerProtocolPolicy:
+            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        },
+        defaultRootObject: "index.html",
+      }
+    );
+
+    new cdk.CfnOutput(this, LOCATION_PHOTOS_BUCKET_NAME + " URL", {
+      value: "https://" + locationPhotosDistribution.domainName,
+      description:
+        "External URL for " + LOCATION_PHOTOS_BUCKET_NAME + " website",
+    });
 
     // Database tables for locations and units
 
@@ -60,7 +99,7 @@ class CdkBackendStack extends cdk.Stack {
       environment: {
         REGION: region,
         LOCATIONS_TABLE_NAME,
-        UNITS_TABLE_NAME
+        UNITS_TABLE_NAME,
       },
       timeout: cdk.Duration.seconds(30),
       commandHooks: {
@@ -71,7 +110,12 @@ class CdkBackendStack extends cdk.Stack {
     });
 
     locationsTable.grant(ggsLambda, "dynamodb:GetItem", "dynamodb:Scan");
-    unitsTable.grant(ggsLambda, "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Scan");
+    unitsTable.grant(
+      ggsLambda,
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:Scan"
+    );
 
     // API gateway
 
@@ -81,13 +125,13 @@ class CdkBackendStack extends cdk.Stack {
       restApiName: "GGS Client Service (" + envStageName + ")",
       description: "This service provides the GGS app functions.",
       defaultCorsPreflightOptions: {
-        allowHeaders: ['Content-Type', 'ggsunit'],
+        allowHeaders: ["Content-Type", "ggsunit"],
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
         allowMethods: apigateway.Cors.ALL_METHODS,
       },
       deployOptions: {
-        stageName: envStageName
-      }
+        stageName: envStageName,
+      },
     });
     new cdk.CfnOutput(this, "GGS client API endpoint", {
       value: restApi.urlForPath(),
@@ -109,7 +153,8 @@ class CdkBackendStack extends cdk.Stack {
     unitCollectApiResource.addMethod("POST");
 
     // API GET /unit/leaderboard
-    const unitLeaderboardApiResource = unitApiResource.addResource("leaderboard");
+    const unitLeaderboardApiResource =
+      unitApiResource.addResource("leaderboard");
     unitLeaderboardApiResource.addMethod("GET");
   }
 }

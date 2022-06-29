@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "declaration": true,
+    "noEmit": true,
+    "outDir": "dist",
+    "esModuleInterop": true
+  }
+}
