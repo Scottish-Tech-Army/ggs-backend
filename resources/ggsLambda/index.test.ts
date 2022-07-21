@@ -876,7 +876,7 @@ describe("api call POST /unit/collect", () => {
 });
 
 describe("api call GET /unit/leaderboard", () => {
-  it("successful response", async () => {
+  it("successful response with no locations collected", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce(
       DB_GET_UNIT_RESPONSE
     );
@@ -891,12 +891,7 @@ describe("api call GET /unit/leaderboard", () => {
     const result = await handler(event as APIGatewayProxyEvent);
 
     expect(result.statusCode).toEqual(200);
-    expect(result.body).toEqual(
-      JSON.stringify([
-        { area: "Edinburgh, Midlothian", percentageCollected: 0 },
-        { area: "Aberdeen", percentageCollected: 0 },
-      ])
-    );
+    expect(result.body).toEqual(JSON.stringify([]));
 
     expect(dynamodbClient.send).toHaveBeenCalledTimes(2);
     expect(dynamodbClient.send).toHaveBeenNthCalledWith(
@@ -935,12 +930,7 @@ describe("api call GET /unit/leaderboard", () => {
     const result = await handler(event as APIGatewayProxyEvent);
 
     expect(result.statusCode).toEqual(200);
-    expect(result.body).toEqual(
-      JSON.stringify([
-        { area: "Edinburgh, Midlothian", percentageCollected: 0 },
-        { area: "Aberdeen", percentageCollected: 0 },
-      ])
-    );
+    expect(result.body).toEqual(JSON.stringify([]));
 
     expect(dynamodbClient.send).toHaveBeenCalledTimes(2);
     expect(dynamodbClient.send).toHaveBeenNthCalledWith(
