@@ -225,12 +225,14 @@ export const handler = async (
       });
     }
 
-    const collectedPercentages = areas.map((area) => ({
-      area,
-      percentageCollected: Math.round(
-        (100 * (collectedTotals[area] || 0)) / areaTotals[area]
-      ),
-    }));
+    const collectedPercentages = areas
+      .map((area) => ({
+        area,
+        percentageCollected: Math.round(
+          (100 * (collectedTotals[area] || 0)) / areaTotals[area]
+        ),
+      }))
+      .filter(({ percentageCollected }) => percentageCollected > 0);
 
     return {
       headers,
