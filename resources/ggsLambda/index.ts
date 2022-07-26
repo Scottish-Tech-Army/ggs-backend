@@ -10,7 +10,8 @@ import { dynamodbClient } from "./aws";
 import { APIGatewayProxyResult, APIGatewayEvent } from "aws-lambda";
 
 type GGSUnit = {
-  unitName: string;
+  unitId: string; // Email
+  name: string;
   locations: string[];
 };
 
@@ -20,6 +21,10 @@ type GGSLocation = {
   county: string;
   collected?: boolean;
 };
+
+// From https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
+const VALID_EMAIL_REGEX =
+  /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 const locationsTableName = process.env.LOCATIONS_TABLE_NAME;
 const unitsTableName = process.env.UNITS_TABLE_NAME;
@@ -105,25 +110,65 @@ export const handler = async (
     } catch (error) {
       return errorResponse(400, "Invalid request body");
     }
-    if (!payload.code) {
-      return errorResponse(400, "Unit login code missing");
+    if (!payload.email) {
+      return errorResponse(400, "Unit login email missing");
     }
 
-    const inputUnitName = payload.code.trim().toLowerCase();
+    const inputEmail = payload.email.trim().toLowerCase();
 
-    const unitIds = await getUnitIds();
+    const unit = await getUnit(inputEmail);
 
-    const unitName = unitIds.find(
-      (unitId) => unitId.trim().toLowerCase() === inputUnitName
-    );
-    if (!unitName) {
-      return errorResponse(404, "Unit login code not found: " + payload.code);
+    if (!unit) {
+      return errorResponse(404, "Unit login email not found: " + payload.email);
     }
 
     return {
       headers,
       statusCode: 200,
-      body: JSON.stringify({ unitName }),
+      body: JSON.stringify({ email: unit.unitId, name: unit.name }),
+    };
+  }
+
+  if (event.resource === "/unit/register") {
+    if (!event.body) {
+      return errorResponse(400, "Invalid request body");
+    }
+    let payload;
+    try {
+      payload = JSON.parse(event.body);
+    } catch (error) {
+      return errorResponse(400, "Invalid request body");
+    }
+    if (!payload.email) {
+      return errorResponse(400, "Unit register email missing");
+    }
+
+    const inputEmail = payload.email.trim().toLowerCase();
+    const inputName = payload.name.trim();
+
+    if (!VALID_EMAIL_REGEX.test(inputEmail)) {
+      return errorResponse(
+        400,
+        "Unit register email invalid: " + payload.email
+      );
+    }
+
+    const unit = await getUnit(inputEmail);
+
+    if (unit) {
+      return errorResponse(
+        409,
+        "Unit register email already exists: " + payload.email
+      );
+    }
+
+    const newUnit = { unitId: inputEmail, name: inputName };
+    await updateUnit(newUnit);
+
+    return {
+      headers,
+      statusCode: 201,
+      body: JSON.stringify({ email: inputEmail, name: inputName }),
     };
   }
 

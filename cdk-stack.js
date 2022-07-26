@@ -148,6 +148,10 @@ class CdkBackendStack extends cdk.Stack {
     const unitLoginApiResource = unitApiResource.addResource("login");
     unitLoginApiResource.addMethod("POST");
 
+    // API POST /unit/register
+    const unitRegisterApiResource = unitApiResource.addResource("register");
+    unitRegisterApiResource.addMethod("POST");
+
     // API POST /unit/collect
     const unitCollectApiResource = unitApiResource.addResource("collect");
     unitCollectApiResource.addMethod("POST");
