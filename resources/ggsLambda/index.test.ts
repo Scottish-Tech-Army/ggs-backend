@@ -5,15 +5,30 @@ import { TEST_LOCATIONS_TABLE_NAME, TEST_UNITS_TABLE_NAME } from "./setupTests";
 
 jest.mock("./aws");
 
+const TEST_EMAIL = "team1@example.com";
+const TEST_TEAM_NAME = "Team Awesome";
+
 const DB_UNITS_RESPONSE = {
   Items: [
-    { unitId: { S: "Test Team" }, locations: { L: [] } },
-    { unitId: { S: "\t \tTest Team 2" }, locations: { L: [] } },
+    {
+      unitId: { S: TEST_EMAIL },
+      name: { S: TEST_TEAM_NAME },
+      locations: { L: [] },
+    },
+    {
+      unitId: { S: "team2@example.com" },
+      name: { S: "Test Team 2" },
+      locations: { L: [] },
+    },
   ],
 };
 
 const DB_GET_UNIT_RESPONSE = {
-  Item: { unitId: { S: "Test Team" }, locations: { L: [] } },
+  Item: {
+    unitId: { S: TEST_EMAIL },
+    name: { S: TEST_TEAM_NAME },
+    locations: { L: [] },
+  },
 };
 
 const LOCATIONS = [
@@ -90,23 +105,27 @@ const DB_LOCATIONS_RESPONSE = { Items: DYNAMO_LOCATIONS };
 
 describe("api call POST /unit/login", () => {
   it("successful response (case insensitive)", async () => {
-    (dynamodbClient.send as jest.Mock).mockResolvedValue(DB_UNITS_RESPONSE);
+    (dynamodbClient.send as jest.Mock).mockResolvedValueOnce(
+      DB_GET_UNIT_RESPONSE
+    );
 
     const event: Partial<APIGatewayProxyEvent> = {
-      body: JSON.stringify({ code: "TEST team" }),
+      body: JSON.stringify({ email: "TEAM1@eXAMple.com" }),
       resource: "/unit/login",
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
     expect(result.statusCode).toEqual(200);
-    expect(result.body).toEqual(JSON.stringify({ unitName: "Test Team" }));
+    expect(result.body).toEqual(
+      JSON.stringify({ email: TEST_EMAIL, name: TEST_TEAM_NAME })
+    );
 
     expect(dynamodbClient.send).toHaveBeenCalledTimes(1);
-    expect(dynamodbClient.send).toHaveBeenCalledWith(
+    expect(dynamodbClient.send).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
         input: {
-          ProjectionExpression: "unitId",
-          ReturnConsumedCapacity: "TOTAL",
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -114,75 +133,64 @@ describe("api call POST /unit/login", () => {
   });
 
   it("successful response (whitespace insensitive)", async () => {
-    (dynamodbClient.send as jest.Mock).mockResolvedValue(DB_UNITS_RESPONSE);
+    (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
+      Item: {
+        unitId: { S: "team2@example.com" },
+        name: { S: "Test Team 2" },
+        locations: { L: [] },
+      },
+    });
 
     const event: Partial<APIGatewayProxyEvent> = {
-      body: JSON.stringify({ code: "TEST team 2   \t\t" }),
+      body: JSON.stringify({ email: "team2@example.com   \t\t" }),
       resource: "/unit/login",
     };
     const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(dynamodbClient.send).toHaveBeenCalledTimes(1);
 
     expect(result.statusCode).toEqual(200);
     expect(result.body).toEqual(
-      JSON.stringify({ unitName: "\t \tTest Team 2" })
+      JSON.stringify({ email: "team2@example.com", name: "Test Team 2" })
     );
   });
 
-  it("failure response on unknown code", async () => {
-    (dynamodbClient.send as jest.Mock).mockResolvedValue(DB_UNITS_RESPONSE);
+  it("failure response on unknown email", async () => {
+    (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({});
 
     const event: Partial<APIGatewayProxyEvent> = {
-      body: JSON.stringify({ code: "unknown TEAM" }),
+      body: JSON.stringify({ email: "unknown@example.com" }),
       resource: "/unit/login",
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
+    expect(dynamodbClient.send).toHaveBeenCalledTimes(1);
+
     expect(result.statusCode).toEqual(404);
     expect(result.body).toEqual(
       JSON.stringify({
-        message: "Unit login code not found: unknown TEAM",
+        message: "Unit login email not found: unknown@example.com",
         request: {
-          body: '{"code":"unknown TEAM"}',
+          body: '{"email":"unknown@example.com"}',
           resource: "/unit/login",
         },
       })
     );
   });
 
-  it("failure response on empty DB table", async () => {
-    (dynamodbClient.send as jest.Mock).mockResolvedValue({ Items: [] });
-
-    const event: Partial<APIGatewayProxyEvent> = {
-      body: JSON.stringify({ code: "unknown TEAM" }),
-      resource: "/unit/login",
-    };
-    const result = await handler(event as APIGatewayProxyEvent);
-
-    expect(result.statusCode).toEqual(404);
-    expect(result.body).toEqual(
-      JSON.stringify({
-        message: "Unit login code not found: unknown TEAM",
-        request: {
-          body: '{"code":"unknown TEAM"}',
-          resource: "/unit/login",
-        },
-      })
-    );
-  });
-
-  it("failure response on missing input code", async () => {
-    (dynamodbClient.send as jest.Mock).mockResolvedValue(DB_UNITS_RESPONSE);
-
+  it("failure response on missing input email", async () => {
     const event: Partial<APIGatewayProxyEvent> = {
       body: JSON.stringify({ key: "something else" }),
       resource: "/unit/login",
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
+
     expect(result.statusCode).toEqual(400);
     expect(result.body).toEqual(
       JSON.stringify({
-        message: "Unit login code missing",
+        message: "Unit login email missing",
         request: {
           body: '{"key":"something else"}',
           resource: "/unit/login",
@@ -192,13 +200,13 @@ describe("api call POST /unit/login", () => {
   });
 
   it("failure response on null body", async () => {
-    (dynamodbClient.send as jest.Mock).mockResolvedValue(DB_UNITS_RESPONSE);
-
     const event: Partial<APIGatewayProxyEvent> = {
       body: null,
       resource: "/unit/login",
     };
     const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
 
     expect(result.statusCode).toEqual(400);
     expect(result.body).toEqual(
@@ -210,13 +218,13 @@ describe("api call POST /unit/login", () => {
   });
 
   it("failure response on empty body", async () => {
-    (dynamodbClient.send as jest.Mock).mockResolvedValue(DB_UNITS_RESPONSE);
-
     const event: Partial<APIGatewayProxyEvent> = {
       body: "",
       resource: "/unit/login",
     };
     const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
 
     expect(result.statusCode).toEqual(400);
     expect(result.body).toEqual(
@@ -228,13 +236,13 @@ describe("api call POST /unit/login", () => {
   });
 
   it("failure response on invalid body", async () => {
-    (dynamodbClient.send as jest.Mock).mockResolvedValue(DB_UNITS_RESPONSE);
-
     const event: Partial<APIGatewayProxyEvent> = {
       body: "broken json",
       resource: "/unit/login",
     };
     const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
 
     expect(result.statusCode).toEqual(400);
     expect(result.body).toEqual(
@@ -243,6 +251,224 @@ describe("api call POST /unit/login", () => {
         request: { body: "broken json", resource: "/unit/login" },
       })
     );
+  });
+});
+
+describe("api call POST /unit/register", () => {
+  it("successful registration", async () => {
+    (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({});
+
+    const event: Partial<APIGatewayProxyEvent> = {
+      body: JSON.stringify({
+        email: "\t   \tnew@eXAMple.com \t",
+        name: "\t   New team1\t  ",
+      }),
+      resource: "/unit/register",
+    };
+    const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(result.statusCode).toEqual(201);
+    expect(result.body).toEqual(
+      JSON.stringify({ email: "new@example.com", name: "New team1" })
+    );
+
+    expect(dynamodbClient.send).toHaveBeenCalledTimes(2);
+    // GET to check existence
+    expect(dynamodbClient.send).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        input: {
+          Key: { unitId: { S: "new@example.com" } },
+          TableName: TEST_UNITS_TABLE_NAME,
+        },
+      })
+    );
+    // SET to add record with lowercase email address
+    expect(dynamodbClient.send).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        input: {
+          Item: {
+            name: { S: "New team1" },
+            unitId: { S: "new@example.com" },
+          },
+          TableName: TEST_UNITS_TABLE_NAME,
+        },
+      })
+    );
+  });
+
+  it("successful registration with empty team name", async () => {
+    (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({});
+
+    const event: Partial<APIGatewayProxyEvent> = {
+      body: JSON.stringify({ email: "new@eXAMple.com", name: "" }),
+      resource: "/unit/register",
+    };
+    const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(result.statusCode).toEqual(201);
+    expect(result.body).toEqual(
+      JSON.stringify({ email: "new@example.com", name: "" })
+    );
+
+    expect(dynamodbClient.send).toHaveBeenCalledTimes(2);
+    // GET to check existence
+    expect(dynamodbClient.send).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        input: {
+          Key: { unitId: { S: "new@example.com" } },
+          TableName: TEST_UNITS_TABLE_NAME,
+        },
+      })
+    );
+    // SET to add record with lowercase email address
+    expect(dynamodbClient.send).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        input: {
+          Item: {
+            unitId: { S: "new@example.com" },
+            name: { S: "" },
+          },
+          TableName: TEST_UNITS_TABLE_NAME,
+        },
+      })
+    );
+  });
+
+  it("failure response on existing email", async () => {
+    (dynamodbClient.send as jest.Mock).mockResolvedValueOnce(
+      DB_GET_UNIT_RESPONSE
+    );
+
+    const event: Partial<APIGatewayProxyEvent> = {
+      body: JSON.stringify({ email: TEST_EMAIL, name: "Something else" }),
+      resource: "/unit/register",
+    };
+    const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(result.statusCode).toEqual(409);
+    expect(result.body).toEqual(
+      JSON.stringify({
+        message: "Unit register email already exists: team1@example.com",
+        request: {
+          body: '{"email":"team1@example.com","name":"Something else"}',
+          resource: "/unit/register",
+        },
+      })
+    );
+
+    expect(dynamodbClient.send).toHaveBeenCalledTimes(1);
+    // GET to check existence
+    expect(dynamodbClient.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          Key: { unitId: { S: TEST_EMAIL } },
+          TableName: TEST_UNITS_TABLE_NAME,
+        },
+      })
+    );
+  });
+
+  it("failure response on invalid format email", async () => {
+    const event: Partial<APIGatewayProxyEvent> = {
+      body: JSON.stringify({
+        email: "not a real email",
+        name: "Something else",
+      }),
+      resource: "/unit/register",
+    };
+    const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(result.statusCode).toEqual(400);
+    expect(result.body).toEqual(
+      JSON.stringify({
+        message: "Unit register email invalid: not a real email",
+        request: {
+          body: '{"email":"not a real email","name":"Something else"}',
+          resource: "/unit/register",
+        },
+      })
+    );
+
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
+  });
+
+  it("failure response on missing input email", async () => {
+    const event: Partial<APIGatewayProxyEvent> = {
+      body: JSON.stringify({ name: "New team1" }),
+      resource: "/unit/register",
+    };
+    const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(result.statusCode).toEqual(400);
+    expect(result.body).toEqual(
+      JSON.stringify({
+        message: "Unit register email missing",
+        request: {
+          body: '{"name":"New team1"}',
+          resource: "/unit/register",
+        },
+      })
+    );
+
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
+  });
+
+  it("failure response on null body", async () => {
+    const event: Partial<APIGatewayProxyEvent> = {
+      body: null,
+      resource: "/unit/register",
+    };
+    const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(result.statusCode).toEqual(400);
+    expect(result.body).toEqual(
+      JSON.stringify({
+        message: "Invalid request body",
+        request: { body: null, resource: "/unit/register" },
+      })
+    );
+
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
+  });
+
+  it("failure response on empty body", async () => {
+    const event: Partial<APIGatewayProxyEvent> = {
+      body: "",
+      resource: "/unit/register",
+    };
+    const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(result.statusCode).toEqual(400);
+    expect(result.body).toEqual(
+      JSON.stringify({
+        message: "Invalid request body",
+        request: { body: "", resource: "/unit/register" },
+      })
+    );
+
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
+  });
+
+  it("failure response on invalid body", async () => {
+    const event: Partial<APIGatewayProxyEvent> = {
+      body: "broken json",
+      resource: "/unit/register",
+    };
+    const result = await handler(event as APIGatewayProxyEvent);
+
+    expect(result.statusCode).toEqual(400);
+    expect(result.body).toEqual(
+      JSON.stringify({
+        message: "Invalid request body",
+        request: { body: "broken json", resource: "/unit/register" },
+      })
+    );
+
+    expect(dynamodbClient.send).not.toHaveBeenCalled();
   });
 });
 
@@ -257,7 +483,7 @@ describe("api call GET /locations", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/locations",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -269,7 +495,7 @@ describe("api call GET /locations", () => {
       1,
       expect.objectContaining({
         input: {
-          Key: { unitId: { S: "Test Team" } },
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -288,7 +514,7 @@ describe("api call GET /locations", () => {
 
   it("successful response with unit missing locations array", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
-      Item: { unitId: { S: "Test Team" } },
+      Item: { unitId: { S: TEST_EMAIL } },
     });
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce(
       DB_LOCATIONS_RESPONSE
@@ -296,7 +522,7 @@ describe("api call GET /locations", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/locations",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -308,7 +534,7 @@ describe("api call GET /locations", () => {
       1,
       expect.objectContaining({
         input: {
-          Key: { unitId: { S: "Test Team" } },
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -328,7 +554,7 @@ describe("api call GET /locations", () => {
   it("successful response with collected locations", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
       Item: {
-        unitId: { S: "Test Team" },
+        unitId: { S: TEST_EMAIL },
         locations: {
           L: [{ S: "Old College" }, { S: "Brig o'Balgownie" }],
         },
@@ -340,7 +566,7 @@ describe("api call GET /locations", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/locations",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -357,7 +583,7 @@ describe("api call GET /locations", () => {
   it("successful response with unknown collected location", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
       Item: {
-        unitId: { S: "Test Team" },
+        unitId: { S: TEST_EMAIL },
         locations: {
           L: [
             { S: "Unknown location" },
@@ -373,7 +599,7 @@ describe("api call GET /locations", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/locations",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -397,7 +623,7 @@ describe("api call GET /locations", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/locations",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -405,22 +631,22 @@ describe("api call GET /locations", () => {
     expect(result.body).toEqual(JSON.stringify([]));
   });
 
-  it("failure response on unknown unitName", async () => {
+  it("failure response on unknown email", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({ Item: null });
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/locations",
-      headers: { ggsunit: "Unknown Team" },
+      headers: { ggsunit: "Unknown@example.com" },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
     expect(result.statusCode).toEqual(404);
     expect(result.body).toEqual(
       JSON.stringify({
-        message: "Unit not found: Unknown Team",
+        message: "Unit not found: Unknown@example.com",
         request: {
           resource: "/locations",
-          headers: { ggsunit: "Unknown Team" },
+          headers: { ggsunit: "Unknown@example.com" },
         },
       })
     );
@@ -478,7 +704,7 @@ describe("api call POST /unit/collect", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/collect",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
       body: JSON.stringify({ id: "Arthur's Seat" }),
     };
     const result = await handler(event as APIGatewayProxyEvent);
@@ -491,7 +717,7 @@ describe("api call POST /unit/collect", () => {
       1,
       expect.objectContaining({
         input: {
-          Key: { unitId: { S: "Test Team" } },
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -512,7 +738,8 @@ describe("api call POST /unit/collect", () => {
       expect.objectContaining({
         input: {
           Item: {
-            unitId: { S: "Test Team" },
+            name: { S: TEST_TEAM_NAME },
+            unitId: { S: TEST_EMAIL },
             locations: {
               L: [{ S: "Arthur's Seat" }],
             },
@@ -526,7 +753,8 @@ describe("api call POST /unit/collect", () => {
   it("successful response with previous collected locations", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
       Item: {
-        unitId: { S: "Test Team" },
+        name: { S: TEST_TEAM_NAME },
+        unitId: { S: TEST_EMAIL },
         locations: {
           L: [{ S: "Old College" }, { S: "Brig o'Balgownie" }],
         },
@@ -538,7 +766,7 @@ describe("api call POST /unit/collect", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/collect",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
       body: JSON.stringify({ id: "Arthur's Seat" }),
     };
     const result = await handler(event as APIGatewayProxyEvent);
@@ -551,7 +779,7 @@ describe("api call POST /unit/collect", () => {
       1,
       expect.objectContaining({
         input: {
-          Key: { unitId: { S: "Test Team" } },
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -572,7 +800,8 @@ describe("api call POST /unit/collect", () => {
       expect.objectContaining({
         input: {
           Item: {
-            unitId: { S: "Test Team" },
+            name: { S: TEST_TEAM_NAME },
+            unitId: { S: TEST_EMAIL },
             locations: {
               L: [
                 { S: "Old College" },
@@ -590,7 +819,8 @@ describe("api call POST /unit/collect", () => {
   it("successful response with already collected location", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
       Item: {
-        unitId: { S: "Test Team" },
+        name: { S: TEST_TEAM_NAME },
+        unitId: { S: TEST_EMAIL },
         locations: {
           L: [{ S: "Old College" }, { S: "Brig o'Balgownie" }],
         },
@@ -602,7 +832,7 @@ describe("api call POST /unit/collect", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/collect",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
       body: JSON.stringify({ id: "Old College" }),
     };
     const result = await handler(event as APIGatewayProxyEvent);
@@ -614,7 +844,7 @@ describe("api call POST /unit/collect", () => {
     expect(dynamodbClient.send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          Key: { unitId: { S: "Test Team" } },
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -633,7 +863,7 @@ describe("api call POST /unit/collect", () => {
 
   it("successful response - stored unit without locations array", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
-      Item: { unitId: { S: "Test Team" } },
+      Item: { name: { S: TEST_TEAM_NAME }, unitId: { S: TEST_EMAIL } },
     });
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
       Item: DYNAMO_LOCATIONS[1],
@@ -641,7 +871,7 @@ describe("api call POST /unit/collect", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/collect",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
       body: JSON.stringify({ id: "Arthur's Seat" }),
     };
     const result = await handler(event as APIGatewayProxyEvent);
@@ -654,7 +884,7 @@ describe("api call POST /unit/collect", () => {
       1,
       expect.objectContaining({
         input: {
-          Key: { unitId: { S: "Test Team" } },
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -675,7 +905,8 @@ describe("api call POST /unit/collect", () => {
       expect.objectContaining({
         input: {
           Item: {
-            unitId: { S: "Test Team" },
+            name: { S: TEST_TEAM_NAME },
+            unitId: { S: TEST_EMAIL },
             locations: {
               L: [{ S: "Arthur's Seat" }],
             },
@@ -689,7 +920,8 @@ describe("api call POST /unit/collect", () => {
   it("failure response with unknown collected location", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
       Item: {
-        unitId: { S: "Test Team" },
+        name: { S: TEST_TEAM_NAME },
+        unitId: { S: TEST_EMAIL },
         locations: {
           L: [{ S: "Unknown location" }, { S: "Brig o'Balgownie" }],
         },
@@ -699,7 +931,7 @@ describe("api call POST /unit/collect", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/collect",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
       body: JSON.stringify({ id: "Unknown Location" }),
     };
     const result = await handler(event as APIGatewayProxyEvent);
@@ -717,7 +949,7 @@ describe("api call POST /unit/collect", () => {
       1,
       expect.objectContaining({
         input: {
-          Key: { unitId: { S: "Test Team" } },
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -781,7 +1013,7 @@ describe("api call POST /unit/collect", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       body: JSON.stringify({ key: "something else" }),
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
       resource: "/unit/collect",
     };
     const result = await handler(event as APIGatewayProxyEvent);
@@ -792,7 +1024,7 @@ describe("api call POST /unit/collect", () => {
         message: "locationId missing",
         request: {
           body: '{"key":"something else"}',
-          headers: { ggsunit: "Test Team" },
+          headers: { ggsunit: TEST_EMAIL },
           resource: "/unit/collect",
         },
       })
@@ -806,7 +1038,7 @@ describe("api call POST /unit/collect", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       body: null,
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
       resource: "/unit/collect",
     };
     const result = await handler(event as APIGatewayProxyEvent);
@@ -817,7 +1049,7 @@ describe("api call POST /unit/collect", () => {
         message: "Invalid request body",
         request: {
           body: null,
-          headers: { ggsunit: "Test Team" },
+          headers: { ggsunit: TEST_EMAIL },
           resource: "/unit/collect",
         },
       })
@@ -831,7 +1063,7 @@ describe("api call POST /unit/collect", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       body: "",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
       resource: "/unit/collect",
     };
     const result = await handler(event as APIGatewayProxyEvent);
@@ -842,7 +1074,7 @@ describe("api call POST /unit/collect", () => {
         message: "Invalid request body",
         request: {
           body: "",
-          headers: { ggsunit: "Test Team" },
+          headers: { ggsunit: TEST_EMAIL },
           resource: "/unit/collect",
         },
       })
@@ -856,7 +1088,7 @@ describe("api call POST /unit/collect", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       body: "broken json",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
       resource: "/unit/collect",
     };
     const result = await handler(event as APIGatewayProxyEvent);
@@ -867,7 +1099,7 @@ describe("api call POST /unit/collect", () => {
         message: "Invalid request body",
         request: {
           body: "broken json",
-          headers: { ggsunit: "Test Team" },
+          headers: { ggsunit: TEST_EMAIL },
           resource: "/unit/collect",
         },
       })
@@ -886,7 +1118,7 @@ describe("api call GET /unit/leaderboard", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/leaderboard",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -898,7 +1130,7 @@ describe("api call GET /unit/leaderboard", () => {
       1,
       expect.objectContaining({
         input: {
-          Key: { unitId: { S: "Test Team" } },
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -917,7 +1149,7 @@ describe("api call GET /unit/leaderboard", () => {
 
   it("successful response with unit missing locations array", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
-      Item: { unitId: { S: "Test Team" } },
+      Item: { unitId: { S: TEST_EMAIL } },
     });
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce(
       DB_LOCATIONS_RESPONSE
@@ -925,7 +1157,7 @@ describe("api call GET /unit/leaderboard", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/leaderboard",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -937,7 +1169,7 @@ describe("api call GET /unit/leaderboard", () => {
       1,
       expect.objectContaining({
         input: {
-          Key: { unitId: { S: "Test Team" } },
+          Key: { unitId: { S: TEST_EMAIL } },
           TableName: TEST_UNITS_TABLE_NAME,
         },
       })
@@ -957,7 +1189,7 @@ describe("api call GET /unit/leaderboard", () => {
   it("successful response with collected locations", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
       Item: {
-        unitId: { S: "Test Team" },
+        unitId: { S: TEST_EMAIL },
         locations: {
           L: [{ S: "Old College" }, { S: "Brig o'Balgownie" }],
         },
@@ -969,7 +1201,7 @@ describe("api call GET /unit/leaderboard", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/leaderboard",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -985,7 +1217,7 @@ describe("api call GET /unit/leaderboard", () => {
   it("successful response with unknown collected location", async () => {
     (dynamodbClient.send as jest.Mock).mockResolvedValueOnce({
       Item: {
-        unitId: { S: "Test Team" },
+        unitId: { S: TEST_EMAIL },
         locations: {
           L: [
             { S: "Unknown Location" },
@@ -1001,7 +1233,7 @@ describe("api call GET /unit/leaderboard", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/leaderboard",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -1024,7 +1256,7 @@ describe("api call GET /unit/leaderboard", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unit/leaderboard",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -1102,7 +1334,7 @@ describe("api catchall error response", () => {
 
     const event: Partial<APIGatewayProxyEvent> = {
       resource: "/unknown",
-      headers: { ggsunit: "Test Team" },
+      headers: { ggsunit: TEST_EMAIL },
     };
     const result = await handler(event as APIGatewayProxyEvent);
 
@@ -1112,7 +1344,7 @@ describe("api catchall error response", () => {
         message: "Unrecognised request",
         request: {
           resource: "/unknown",
-          headers: { ggsunit: "Test Team" },
+          headers: { ggsunit: TEST_EMAIL },
         },
       })
     );
