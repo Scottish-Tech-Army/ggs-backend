@@ -34,7 +34,7 @@ type WikimediaPhoto = {
   copyright: string;
 };
 
-const COLUMN_COUNTY = "District/ county";
+const COLUMN_COUNTY = "County";
 const COLUMN_CITY = "City/town";
 const COLUMN_NAME = "Name of location";
 const COLUMN_LATITUDE = "Latitude";
@@ -42,7 +42,7 @@ const COLUMN_LONGITUDE = "Longitude";
 const COLUMN_DESCRIPTION = "Description of map point";
 const COLUMN_CHALLENGE = "Challenge";
 
-const ROWS_TO_SKIP = 3;
+const ROWS_TO_SKIP = 0;
 
 const PHOTOS_BASEURL = process.env.PHOTOS_BASEURL;
 
@@ -173,7 +173,7 @@ export async function getPhotos(locationId: string, photoRef: string) {
   const photos: GGSPhoto[] = [];
 
   if (PHOTO_LINKS[photoRef]) {
-    // Already processed linked photo - skip fetching again
+    // Already processed linked (or file with attribution) photo - skip fetching again
     console.log("Using archived photo link", photoRef);
     const archivedPhoto = PHOTO_LINKS[photoRef];
     photos.push({
@@ -216,7 +216,8 @@ export async function getPhotos(locationId: string, photoRef: string) {
     photos.push({
       url: `${PHOTOS_BASEURL}/${locationId}.jpg`,
     });
-
+    console.log("Photo file", `${locationId}.jpg`);
+    
     photoFileCount++;
   }
   return photos;
@@ -243,6 +244,8 @@ export async function buildLocations(workbook: any): Promise<GGSLocation[]> {
     let city: string | undefined = undefined;
 
     for (let row of contents) {
+      // console.log(row);
+      
       const newCounty = row[COLUMN_COUNTY];
       if (newCounty) {
         county = newCounty;
@@ -271,7 +274,7 @@ export async function buildLocations(workbook: any): Promise<GGSLocation[]> {
           [COLUMN_NAME]: row[COLUMN_NAME],
           [COLUMN_LATITUDE]: row[COLUMN_LATITUDE],
           [COLUMN_LONGITUDE]: row[COLUMN_LONGITUDE],
-        });
+        }, row);
         failCount++;
       } else if (!name || !county || !description || !challenge) {
         console.warn("Incomplete location information: ", sheetName, {
