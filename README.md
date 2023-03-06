@@ -35,6 +35,11 @@ cdk bootstrap aws://AWS_ACCOUNT_NUMBER/REGION [--profile AWS_PROFILE] --context 
 Here `aws://AWS_ACCOUNT_NUMBER/REGION` is the AWS account and region to use for the deployment, e.g. `aws://1234567890/eu-west-2`.
 Use `--profile AWS_PROFILE` if necessary to choose the correct [AWS CLI access keys](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html).
 
+```
+npm i @aws-sdk/client-dynamodb @aws-sdk/util-dynamodb es6-promise isomorphic-fetch
+```
+This installs the outstanding dependencies not install by `npm install`.
+
 Once that's done, the rest of the deploy should go smoothly
 
 ```
